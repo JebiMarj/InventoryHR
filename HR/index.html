@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create and Reach Equipment Inventory System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-image: url('CnrBg.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-color: #667eea;
+            min-height: 100vh; 
+            padding: 20px; 
+        }
+        
+        .container { 
+            max-width: 1600px; 
+            margin: 0 auto; 
+            background: rgba(255, 255, 255, 0.98); 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3); 
+        }
+        
+        header { 
+            margin-bottom: 30px; 
+            border-bottom: 2px solid #e0e0e0; 
+            padding-bottom: 15px; 
+            display: flex; 
+            align-items: center; 
+            gap: 20px; 
+        }
+        
+        .logo-container { 
+            width: 80px; 
+            height: 80px; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            background: transparent; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        
+        .logo-container img { 
+            width: 160%; 
+            height: 160%; 
+            object-fit: contain; 
+        }
+        
+        .header-text { flex: 1; }
+        h1 { color: #1a202c; font-size: 32px; margin-bottom: 5px; }
+        .subtitle { color: #718096; font-size: 14px; }
+        .user-info { text-align: right; font-size: 13px; color: #718096; }
+        .user-info strong { color: #1a202c; }
+        .logout-btn { margin-top: 5px; padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .logout-btn:hover { background: #c0392b; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; transition: all 0.3s; cursor: pointer; }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        .stat-card.active { box-shadow: 0 8px 16px rgba(0,0,0,0.15); border: 2px solid; }
+        .stat-card.stockroom { background: linear-gradient(135deg, #5b9bd5 0%, #4a8cc7 100%); color: white; }
+        .stat-card.stockroom.active { border-color: #3a7cb5; }
+        .stat-card.main-office { background: linear-gradient(135deg, #70ad47 0%, #5d9639 100%); color: white; }
+        .stat-card.main-office.active { border-color: #4d8629; }
+        .stat-card.deployed { background: linear-gradient(135deg, #ffc000 0%, #f0b000 100%); color: white; }
+        .stat-card.deployed.active { border-color: #d0a000; }
+        .stat-card.defective { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; }
+        .stat-card.defective.active { border-color: #a02b1b; }
+        .stat-card.total { background: linear-gradient(135deg, #a370c4 0%, #9160b5 100%); color: white; }
+        .stat-card.total.active { border-color: #7150a5; }
+        .stat-label { font-size: 11px; text-transform: uppercase; font-weight: 600; margin-bottom: 8px; opacity: 0.9; }
+        .stat-value { font-size: 36px; font-weight: bold; margin-bottom: 5px; }
+        .stat-desc { font-size: 12px; opacity: 0.8; }
+        .search-bar { margin-bottom: 20px; display: flex; gap: 10px; }
+        .search-bar input { flex: 1; padding: 15px 20px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
+        .search-bar input:focus { outline: none; border-color: #5b9bd5; }
+        .search-bar select { padding: 15px 20px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; background: white; cursor: pointer; }
+        .search-bar select:focus { outline: none; border-color: #5b9bd5; }
+        .tabs { display: flex; gap: 5px; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; overflow-x: auto; }
+        .tab { padding: 12px 24px; background: none; border: none; cursor: pointer; font-size: 14px; color: #718096; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.3s; white-space: nowrap; }
+        .tab:hover { color: #5b9bd5; }
+        .tab.active { color: #5b9bd5; border-bottom-color: #5b9bd5; font-weight: 600; }
+        .actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .actions-right { display: flex; gap: 10px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-success { background: #70ad47; color: white; }
+        .btn-primary { background: #5b9bd5; color: white; }
+        .btn-warning { background: #ff9800; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-cancel { background: #e2e8f0; color: #2d3748; }
+        .btn-small { padding: 6px 12px; font-size: 12px; margin: 2px; }
+        .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; min-width: 1200px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+        th { background: #5b9bd5; color: white; font-weight: 600; }
+        td { color: #4a5568; }
+        tr:hover { background-color: #f7fafc; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .status-badge.available { background: #d4edda; color: #155724; }
+        .status-badge.deployed { background: #fff3cd; color: #856404; }
+        .status-badge.defective { background: #f8d7da; color: #721c24; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 1000; }
+        .modal.active { display: flex; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #e2e8f0; }
+        .modal-header h2 { color: #1a202c; font-size: 20px; }
+        .close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: #718096; }
+        .close-btn:hover { color: #e53e3e; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; color: #2d3748; font-size: 13px; font-weight: 600; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #5b9bd5; }
+        .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .form-actions button { flex: 1; }
+        .empty-state { text-align: center; padding: 60px 40px; color: #a0aec0; font-size: 16px; }
+        .connection-status { position: fixed; top: 20px; right: 20px; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; z-index: 2000; }
+        .connection-status.connected { background: #d4edda; color: #155724; }
+        .connection-status.error { background: #f8d7da; color: #721c24; }
+        .equipment-info { background: #f7fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .equipment-info div { margin-bottom: 8px; font-size: 13px; }
+        .equipment-info strong { color: #1a202c; }
+        .action-buttons { display: flex; gap: 5px; flex-wrap: wrap; }
+        
+        .login-container { 
+            max-width: 450px; 
+            margin: 100px auto; 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3); 
+            backdrop-filter: blur(10px);
+        }
+        
+        .login-header { text-align: center; margin-bottom: 30px; }
+        .login-logo { width: 200px; height: 200px; margin: 0 auto 20px; }
+        .login-logo img { width: 100%; height: 100%; object-fit: contain; }
+        .login-header h1 { color: #1a202c; font-size: 28px; margin-bottom: 10px; }
+        .login-header p { color: #718096; font-size: 14px; }
+        .summary-modal .modal-content { max-width: 800px; }
+        .summary-item { padding: 12px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .summary-item:hover { background: #f7fafc; }
+        .summary-item:last-child { border-bottom: none; }
+        .summary-type { font-weight: 600; color: #1a202c; }
+        .summary-count { background: #5b9bd5; color: white; padding: 4px 12px; border-radius: 12px; font-weight: 600; }
+        .error-message { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 13px; display: none; }
+    </style>
+</head>
+<body>
+    <div id="connectionStatus" class="connection-status" style="display: none;"></div>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-header">
+            <div class="login-logo">
+                <img src="CnrLogo.png" alt="Create & Reach Logo">
+            </div>
+            <h1>Create and Reach Equipment</h1>
+            <p>Inventory Management System</p>
+        </div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" required placeholder="Enter username" autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" required placeholder="Enter password" autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">🔐 Login</button>
+            <div id="loginError" class="error-message"></div>
+        </form>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="container" style="display: none;">
+        <header>
+            <div class="logo-container">
+                <img src="CnrLogo.png" alt="Create & Reach Logo">
+            </div>
+            <div class="header-text">
+                <h1>Create and Reach Equipment Inventory System</h1>
+                <p class="subtitle">Complete Equipment Lifecycle Management</p>
+            </div>
+            <div class="user-info">
+                <div>👤 <strong id="currentUser"></strong></div>
+                <div style="font-size: 11px; margin-top: 2px;" id="userRole"></div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card stockroom" onclick="toggleStatSummary('stockroom')" id="stockroomCard">
+                <div class="stat-label">📦 STOCKROOM</div>
+                <div class="stat-value" id="stockroomCount">0</div>
+                <div class="stat-desc">Available Items</div>
+            </div>
+            <div class="stat-card main-office" onclick="toggleStatSummary('main-office')" id="mainOfficeCard">
+                <div class="stat-label">🏢 MAIN OFFICE</div>
+                <div class="stat-value" id="mainOfficeCount">0</div>
+                <div class="stat-desc">Available Items</div>
+            </div>
+            <div class="stat-card deployed" onclick="toggleStatSummary('deployed')" id="deployedCard">
+                <div class="stat-label">👥 DEPLOYED</div>
+                <div class="stat-value" id="deployedCount">0</div>
+                <div class="stat-desc">In Use</div>
+            </div>
+            <div class="stat-card defective" onclick="toggleStatSummary('defective')" id="defectiveCard">
+                <div class="stat-label">⚠️ DEFECTIVE</div>
+                <div class="stat-value" id="defectiveCount">0</div>
+                <div class="stat-desc">Needs Repair</div>
+            </div>
+            <div class="stat-card total" onclick="toggleStatSummary('all')" id="totalCard">
+                <div class="stat-label">📊 TOTAL</div>
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-desc">All Equipment</div>
+            </div>
+        </div>
+
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="🔍 Search by code, type, model, employee, department...">
+            <select id="sortByType">
+                <option value="">Sort by Type</option>
+            </select>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="all">📋 All</button>
+            <button class="tab" data-tab="stockroom">📦 Stockroom</button>
+            <button class="tab" data-tab="main-office">🏢 Main Office</button>
+            <button class="tab" data-tab="deployed">👥 Deployed</button>
+            <button class="tab" data-tab="defective">⚠️ Defective</button>
+        </div>
+
+        <div class="actions">
+            <h3 id="tableTitle">Master Inventory</h3>
+            <div class="actions-right">
+                <button class="btn btn-primary" onclick="generatePDF()">📄 PDF Report</button>
+                <button class="btn btn-success" id="addItemBtn">➕ Add Equipment</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Location</th>
+                        <th>Code</th>
+                        <th>Type</th>
+                        <th>Model</th>
+                        <th>Serial No</th>
+                        <th>Qty</th>
+                        <th>Status</th>
+                        <th>Assigned To</th>
+                        <th>Department</th>
+                        <th>Date Issued</th>
+                        <th>Remarks</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryBody">
+                    <tr><td colspan="12" class="empty-state">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Summary Modal -->
+    <div class="modal summary-modal" id="summaryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="summaryTitle">Summary</h2>
+                <button class="close-btn" onclick="closeSummary()">&times;</button>
+            </div>
+            <div id="summaryContent"></div>
+        </div>
+    </div>
+
+    <!-- Item Modal -->
+    <div class="modal" id="itemModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Equipment</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <form id="itemForm">
+                <div class="form-group">
+                    <label>Location *</label>
+                    <select id="location" required>
+                        <option value="Stockroom">Stockroom</option>
+                        <option value="Main Office">Main Office</option>
+                        <option value="Defective">Defective</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Code *</label>
+                    <input type="text" id="code" required placeholder="e.g., MAC-0031">
+                </div>
+                <div class="form-group">
+                    <label>Type *</label>
+                    <input type="text" id="type" required placeholder="e.g., Laptop">
+                </div>
+                <div class="form-group">
+                    <label>Model *</label>
+                    <input type="text" id="model" required placeholder="e.g., Macbook Air M1">
+                </div>
+                <div class="form-group">
+                    <label>Serial Number</label>
+                    <input type="text" id="serialNo" placeholder="Optional">
+                </div>
+                <div class="form-group">
+                    <label>Quantity *</label>
+                    <input type="number" id="qty" value="1" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Remarks</label>
+                    <input type="text" id="remarks" placeholder="e.g., Brand New, Used">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-success">💾 Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Assign Modal -->
+    <div class="modal" id="assignModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📦 Assign Equipment to Employee</h2>
+                <button class="close-btn" id="closeAssignModal">&times;</button>
+            </div>
+            <div id="assignInfo" class="equipment-info"></div>
+            <form id="assignForm">
+                <div class="form-group">
+                    <label>Assigned To (Employee Name) *</label>
+                    <input type="text" id="assignedTo" required placeholder="e.g., Ghay Rosel">
+                </div>
+                <div class="form-group">
+                    <label>Department *</label>
+                    <input type="text" id="department" required placeholder="e.g., Operation, HR">
+                </div>
+                <div class="form-group">
+                    <label>Date Issued *</label>
+                    <input type="date" id="dateIssued" required>
+                </div>
+                <div class="form-group">
+                    <label>Batch</label>
+                    <input type="text" id="batch" placeholder="e.g., LEGEND, CHARLIE">
+                </div>
+                <div class="form-group">
+                    <label>Accessories</label>
+                    <input type="text" id="accessories" placeholder="e.g., Mouse, Keyboard, Headset">
+                </div>
+                <div class="form-group">
+                    <label>Assignment Notes</label>
+                    <textarea id="assignRemarks" rows="2" placeholder="Any notes about this assignment"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" id="cancelAssignBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">📦 Assign Equipment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Return Modal -->
+    <div class="modal" id="returnModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>↩️ Return Equipment</h2>
+                <button class="close-btn" id="closeReturnModal">&times;</button>
+            </div>
+            <div id="returnInfo" class="equipment-info"></div>
+            <form id="returnForm">
+                <div class="form-group">
+                    <label>Return To *</label>
+                    <select id="returnLocation" required>
+                        <option value="Stockroom">Stockroom</option>
+                        <option value="Main Office">Main Office</option>
+                        <option value="Defective">Defective (If damaged)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Return Notes</label>
+                    <textarea id="returnRemarks" rows="3" placeholder="e.g., Returned in good condition, minor scratches, etc."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" id="cancelReturnBtn">Cancel</button>
+                    <button type="submit" class="btn btn-success">↩️ Return Equipment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reassign Modal -->
+    <div class="modal" id="reassignModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔄 Reassign Equipment</h2>
+                <button class="close-btn" id="closeReassignModal">&times;</button>
+            </div>
+            <div id="reassignInfo" class="equipment-info"></div>
+            <form id="reassignForm">
+                <div class="form-group">
+                    <label>New Employee *</label>
+                    <input type="text" id="newEmployee" required placeholder="New employee name">
+                </div>
+                <div class="form-group">
+                    <label>New Department *</label>
+                    <input type="text" id="newDepartment" required placeholder="New department">
+                </div>
+                <div class="form-group">
+                    <label>Date Issued *</label>
+                    <input type="date" id="newDateIssued" required>
+                </div>
+                <div class="form-group">
+                    <label>Reassignment Reason</label>
+                    <textarea id="reassignReason" rows="2" placeholder="e.g., Employee transferred, replacement needed"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" id="cancelReassignBtn">Cancel</button>
+                    <button type="submit" class="btn btn-warning">🔄 Reassign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://qamrtajrxztzelbferqm.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhbXJ0YWpyeHp0emVsYmZlcnFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY3NTA1MDgsImV4cCI6MjA4MjMyNjUwOH0.er7S54C2h3jNUTPtdz-rRkRw6xGNR-8aDpXPlhwYDwM'
+        const { createClient } = window.supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // User credentials - HR has full access, Viewer is read-only
+    const USERS = {
+        'hr': { password: 'hr123', role: 'HR', canEdit: true },
+        'viewer': { password: 'viewer123', role: 'Viewer', canEdit: false }
+    };
+
+    let currentUserData = null;
+    let inv = [];
+    let tab = 'all';
+    let editId = null;
+    let currentItem = null;
+    let activeStat = null;
+
+    // Initialize on page load
+    window.addEventListener('load', function() {
+        console.log('Page loaded, initializing...');
+
+        // Check if user is logged in
+        const loggedUser = sessionStorage.getItem('cnr_user');
+        if (loggedUser) {
+            try {
+                currentUserData = JSON.parse(loggedUser);
+                console.log('User already logged in:', currentUserData);
+                showMainApp();
+            } catch(e) {
+                console.error('Error parsing user data:', e);
+                sessionStorage.removeItem('cnr_user');
+            }
+        }
+
+        // Setup login form
+        const loginForm = document.getElementById('loginForm');
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim().toLowerCase();
+            const password = document.getElementById('password').value;
+            
+            const errorDiv = document.getElementById('loginError');
+            
+            if (USERS[username] && USERS[username].password === password) {
+                currentUserData = { 
+                    username: username, 
+                    role: USERS[username].role,
+                    canEdit: USERS[username].canEdit
+                };
+                sessionStorage.setItem('cnr_user', JSON.stringify(currentUserData));
+                errorDiv.style.display = 'none';
+                showMainApp();
+                show('✅ Logged in as ' + USERS[username].role);
+            } else {
+                errorDiv.textContent = '❌ Invalid username or password. Please use: hr/hr123 or viewer/viewer123';
+                errorDiv.style.display = 'block';
+            }
+        });
+
+        setupEventListeners();
+    });
+
+    function setupEventListeners() {
+        // Item modal
+        document.getElementById('addItemBtn').addEventListener('click', () => openModal());
+        document.getElementById('closeModal').addEventListener('click', closeModalFunc);
+        document.getElementById('cancelBtn').addEventListener('click', closeModalFunc);
+        document.getElementById('itemForm').addEventListener('submit', saveItem);
+
+        // Assign modal
+        document.getElementById('closeAssignModal').addEventListener('click', closeAssign);
+        document.getElementById('cancelAssignBtn').addEventListener('click', closeAssign);
+        document.getElementById('assignForm').addEventListener('submit', assignEquipment);
+
+        // Return modal
+        document.getElementById('closeReturnModal').addEventListener('click', closeReturn);
+        document.getElementById('cancelReturnBtn').addEventListener('click', closeReturn);
+        document.getElementById('returnForm').addEventListener('submit', returnEquipment);
+
+        // Reassign modal
+        document.getElementById('closeReassignModal').addEventListener('click', closeReassign);
+        document.getElementById('cancelReassignBtn').addEventListener('click', closeReassign);
+        document.getElementById('reassignForm').addEventListener('submit', reassignEquipment);
+
+        // Search and filter
+        document.getElementById('searchInput').addEventListener('input', render);
+        document.getElementById('sortByType').addEventListener('change', render);
+
+        // Tabs
+        document.querySelectorAll('.tab').forEach(t => {
+            t.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+                t.classList.add('active');
+                tab = t.dataset.tab;
+                render();
+            });
+        });
+
+        // Close modals on outside click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+    }
+
+    function logout() {
+        sessionStorage.removeItem('cnr_user');
+        currentUserData = null;
+        document.getElementById('loginScreen').style.display = 'block';
+        document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+    }
+
+    function showMainApp() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('currentUser').textContent = currentUserData.username;
+        document.getElementById('userRole').textContent = currentUserData.role + (currentUserData.canEdit ? ' (Full Access)' : ' (View Only)');
+        
+        // Disable editing for non-editors (viewers)
+        if (!currentUserData.canEdit) {
+            document.getElementById('addItemBtn').disabled = true;
+        }
+        
+        load();
+    }
+
+    function show(msg, err = false) {
+        const s = document.getElementById('connectionStatus');
+        s.textContent = msg;
+        s.className = `connection-status ${err ? 'error' : 'connected'}`;
+        s.style.display = 'block';
+        setTimeout(() => s.style.display = 'none', 3000);
+    }
+
+    async function load() {
+        try {
+            const { data, error } = await sb.from('inventory').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            inv = data || [];
+            updateStats();
+            updateTypeFilter();
+            render();
+            show('✅ Connected');
+        } catch (e) {
+            console.error(e);
+            show('❌ Error: ' + e.message, true);
+        }
+    }
+
+    function updateStats() {
+        document.getElementById('stockroomCount').textContent = inv.filter(i => i.location === 'Stockroom' && i.status === 'Available').length;
+        document.getElementById('mainOfficeCount').textContent = inv.filter(i => i.location === 'Main Office' && i.status === 'Available').length;
+        document.getElementById('deployedCount').textContent = inv.filter(i => i.status === 'Deployed').length;
+        document.getElementById('defectiveCount').textContent = inv.filter(i => i.location === 'Defective' || i.status === 'Defective').length;
+        document.getElementById('totalCount').textContent = inv.length;
+    }
+
+    function updateTypeFilter() {
+        const types = [...new Set(inv.map(i => i.type).filter(Boolean))].sort();
+        const select = document.getElementById('sortByType');
+        select.innerHTML = '<option value="">Sort by Type</option>';
+        types.forEach(type => {
+            const opt = document.createElement('option');
+            opt.value = type;
+            opt.textContent = type;
+            select.appendChild(opt);
+        });
+    }
+
+    function toggleStatSummary(statType) {
+        document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+        
+        if (activeStat === statType) {
+            activeStat = null;
+            closeSummary();
+            return;
+        }
+        
+        activeStat = statType;
+        document.getElementById(statType === 'stockroom' ? 'stockroomCard' : 
+                                statType === 'main-office' ? 'mainOfficeCard' :
+                                statType === 'deployed' ? 'deployedCard' :
+                                statType === 'defective' ? 'defectiveCard' : 'totalCard').classList.add('active');
+        
+        showSummary(statType);
+    }
+
+    function showSummary(statType) {
+        let filt = [];
+        let title = '';
+        
+        if (statType === 'stockroom') {
+            filt = inv.filter(i => i.location === 'Stockroom' && i.status === 'Available');
+            title = '📦 Stockroom Summary by Type';
+        } else if (statType === 'main-office') {
+            filt = inv.filter(i => i.location === 'Main Office' && i.status === 'Available');
+            title = '🏢 Main Office Summary by Type';
+        } else if (statType === 'deployed') {
+            filt = inv.filter(i => i.status === 'Deployed');
+            title = '👥 Deployed Equipment by Type';
+        } else if (statType === 'defective') {
+            filt = inv.filter(i => i.location === 'Defective' || i.status === 'Defective');
+            title = '⚠️ Defective Equipment by Type';
+        } else {
+            filt = inv;
+            title = '📊 Total Inventory by Type';
+        }
+        
+        const summary = {};
+        filt.forEach(item => {
+            const type = item.type || 'Uncategorized';
+            summary[type] = (summary[type] || 0) + (item.qty || 1);
+        });
+        
+        const sortedTypes = Object.keys(summary).sort();
+        const content = sortedTypes.map(type => 
+            `<div class="summary-item">
+                <span class="summary-type">${type}</span>
+                <span class="summary-count">${summary[type]}</span>
+            </div>`
+        ).join('');
+        
+        document.getElementById('summaryTitle').textContent = title;
+        document.getElementById('summaryContent').innerHTML = content || '<div class="empty-state">No items found</div>';
+        document.getElementById('summaryModal').classList.add('active');
+    }
+
+    function closeSummary() {
+        document.getElementById('summaryModal').classList.remove('active');
+        document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+        activeStat = null;
+    }
+
+    function render() {
+        const tbody = document.getElementById('inventoryBody');
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const typeFilter = document.getElementById('sortByType').value;
+        
+        let filt = inv.filter(i => {
+            const match = !search || ['code','type','model','serial_no','assigned_to','department','remarks'].some(k => i[k]?.toLowerCase().includes(search));
+            const typeMatch = !typeFilter || i.type === typeFilter;
+            let tabMatch = true;
+            if (tab === 'stockroom') tabMatch = i.location === 'Stockroom' && i.status === 'Available';
+            if (tab === 'main-office') tabMatch = i.location === 'Main Office' && i.status === 'Available';
+            if (tab === 'deployed') tabMatch = i.status === 'Deployed';
+            if (tab === 'defective') tabMatch = i.location === 'Defective' || i.status === 'Defective';
+            return match && typeMatch && tabMatch;
+        });
+
+        const titles = {
+            'all': 'Master Inventory - All Equipment',
+            'stockroom': 'Stockroom - Available Equipment',
+            'main-office': 'Main Office - Available Equipment',
+            'deployed': 'Deployed Equipment - Currently In Use',
+            'defective': 'Defective Equipment - Needs Repair'
+        };
+        document.getElementById('tableTitle').textContent = titles[tab];
+
+        if (filt.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="12" class="empty-state">No equipment found</td></tr>';
+            return;
+        }
+
+        const canEdit = currentUserData && currentUserData.canEdit;
+
+        tbody.innerHTML = filt.map(i => {
+            let actions = '';
+            if (!canEdit) {
+                actions = '<span style="color: #999; font-size: 11px;">View Only</span>';
+            } else if (i.status === 'Deployed') {
+                actions = `
+                    <button class="btn btn-primary btn-small" onclick="edit(${i.id})">✏️ Edit</button>
+                    <button class="btn btn-warning btn-small" onclick="openReassign(${i.id})">🔄 Reassign</button>
+                    <button class="btn btn-success btn-small" onclick="openReturn(${i.id})">↩️ Return</button>
+                    <button class="btn btn-danger btn-small" onclick="del(${i.id})">🗑️</button>
+                `;
+            } else {
+                actions = `
+                    <button class="btn btn-primary btn-small" onclick="edit(${i.id})">✏️ Edit</button>
+                    <button class="btn btn-warning btn-small" onclick="openAssign(${i.id})">📦 Assign</button>
+                    <button class="btn btn-danger btn-small" onclick="del(${i.id})">🗑️</button>
+                `;
+            }
+
+            return `<tr>
+                <td><strong>${i.location||'-'}</strong></td>
+                <td>${i.code||'-'}</td>
+                <td>${i.type||'-'}</td>
+                <td>${i.model||'-'}</td>
+                <td>${i.serial_no||'-'}</td>
+                <td><strong>${i.qty||0}</strong></td>
+                <td><span class="status-badge ${(i.status||'available').toLowerCase()}">${i.status||'Available'}</span></td>
+                <td>${i.assigned_to||'-'}</td>
+                <td>${i.department||'-'}</td>
+                <td>${i.date_issued||'-'}</td>
+                <td>${i.remarks||'-'}</td>
+                <td><div class="action-buttons">${actions}</div></td>
+            </tr>`;
+        }).join('');
+    }
+
+    async function generatePDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4');
+        
+        doc.setFontSize(18);
+        doc.text('Create & Reach Equipment Inventory Report', 14, 20);
+        doc.setFontSize(10);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 27);
+        doc.text(`By: ${currentUserData.username} (${currentUserData.role})`, 14, 32);
+        
+        const stats = [
+            ['Stockroom', inv.filter(i => i.location === 'Stockroom' && i.status === 'Available').length],
+            ['Main Office', inv.filter(i => i.location === 'Main Office' && i.status === 'Available').length],
+            ['Deployed', inv.filter(i => i.status === 'Deployed').length],
+            ['Defective', inv.filter(i => i.location === 'Defective' || i.status === 'Defective').length],
+            ['Total', inv.length]
+        ];
+        
+        doc.autoTable({
+            startY: 40,
+            head: [['Category', 'Count']],
+            body: stats,
+            theme: 'grid',
+            headStyles: { fillColor: [91, 155, 213] }
+        });
+        
+        const tableData = inv.map(i => [
+            i.location || '-',
+            i.code || '-',
+            i.type || '-',
+            i.model || '-',
+            i.serial_no || '-',
+            i.qty || 0,
+            i.status || 'Available',
+            i.assigned_to || '-',
+            i.department || '-',
+            i.date_issued || '-'
+        ]);
+        
+        doc.autoTable({
+            startY: doc.lastAutoTable.finalY + 10,
+            head: [['Location', 'Code', 'Type', 'Model', 'Serial', 'Qty', 'Status', 'Assigned', 'Dept', 'Date']],
+            body: tableData,
+            theme: 'striped',
+            headStyles: { fillColor: [91, 155, 213] },
+            styles: { fontSize: 8 }
+        });
+        
+        doc.save(`CNR_Inventory_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        show('✅ PDF Report Generated');
+    }
+
+    function openModal(id = null) {
+        if (!currentUserData.canEdit) {
+            show('❌ View only mode - No edit permissions', true);
+            return;
+        }
+        
+        editId = id;
+        const modal = document.getElementById('itemModal');
+        const form = document.getElementById('itemForm');
+        
+        if (id) {
+            const item = inv.find(i => i.id === id);
+            if (item) {
+                document.getElementById('modalTitle').textContent = 'Edit Equipment';
+                document.getElementById('location').value = item.location || 'Stockroom';
+                document.getElementById('code').value = item.code || '';
+                document.getElementById('type').value = item.type || '';
+                document.getElementById('model').value = item.model || '';
+                document.getElementById('serialNo').value = item.serial_no || '';
+                document.getElementById('qty').value = item.qty || 1;
+                document.getElementById('remarks').value = item.remarks || '';
+            }
+        } else {
+            document.getElementById('modalTitle').textContent = 'Add Equipment';
+            form.reset();
+        }
+        modal.classList.add('active');
+    }
+
+    function closeModalFunc() {
+        document.getElementById('itemModal').classList.remove('active');
+        document.getElementById('itemForm').reset();
+        editId = null;
+    }
+
+    async function saveItem(e) {
+        e.preventDefault();
+        
+        if (!currentUserData.canEdit) {
+            show('❌ No edit permissions', true);
+            return;
+        }
+        
+        const loc = document.getElementById('location').value;
+        const item = {
+            location: loc,
+            code: document.getElementById('code').value,
+            type: document.getElementById('type').value,
+            model: document.getElementById('model').value,
+            serial_no: document.getElementById('serialNo').value,
+            qty: parseInt(document.getElementById('qty').value),
+            status: loc === 'Defective' ? 'Defective' : 'Available',
+            assigned_to: '',
+            department: '',
+            date_issued: '',
+            batch: '',
+            accessories: '',
+            remarks: document.getElementById('remarks').value,
+            updated_at: new Date().toISOString()
+        };
+        
+        try {
+            if (editId) {
+                const { error } = await sb.from('inventory').update(item).eq('id', editId);
+                if (error) throw error;
+                show('✅ Equipment updated');
+            } else {
+                const { error } = await sb.from('inventory').insert([item]);
+                if (error) throw error;
+                show('✅ Equipment added');
+            }
+            await load();
+            closeModalFunc();
+        } catch (e) {
+            console.error(e);
+            show('❌ Error: ' + e.message, true);
+        }
+    }
+
+    function openAssign(id) {
+        if (!currentUserData.canEdit) {
+            show('❌ View only mode - No edit permissions', true);
+            return;
+        }
+        
+        currentItem = inv.find(i => i.id === id);
+        if (!currentItem) return;
+        
+        document.getElementById('assignInfo').innerHTML = `
+            <div><strong>Equipment:</strong> ${currentItem.code} - ${currentItem.type}</div>
+            <div><strong>Model:</strong> ${currentItem.model}</div>
+            <div><strong>Current Location:</strong> ${currentItem.location}</div>
+        `;
+        
+        document.getElementById('dateIssued').valueAsDate = new Date();
+        document.getElementById('assignModal').classList.add('active');
+    }
+
+    function closeAssign() {
+        document.getElementById('assignModal').classList.remove('active');
+        document.getElementById('assignForm').reset();
+        currentItem = null;
+    }
+
+    async function assignEquipment(e) {
+        e.preventDefault();
+        if (!currentItem || !currentUserData.canEdit) return;
+        
+        const update = {
+            location: 'Deployed',
+            status: 'Deployed',
+            assigned_to: document.getElementById('assignedTo').value,
+            department: document.getElementById('department').value,
+            date_issued: document.getElementById('dateIssued').value,
+            batch: document.getElementById('batch').value,
+            accessories: document.getElementById('accessories').value,
+            remarks: document.getElementById('assignRemarks').value || currentItem.remarks,
+            updated_at: new Date().toISOString()
+        };
+        
+        try {
+            const { error } = await sb.from('inventory').update(update).eq('id', currentItem.id);
+            if (error) throw error;
+            show('✅ Equipment assigned to ' + update.assigned_to);
+            await load();
+            closeAssign();
+        } catch (e) {
+            console.error(e);
+            show('❌ Error: ' + e.message, true);
+        }
+    }
+
+    function openReturn(id) {
+        if (!currentUserData.canEdit) {
+            show('❌ View only mode - No edit permissions', true);
+            return;
+        }
+        
+        currentItem = inv.find(i => i.id === id);
+        if (!currentItem) return;
+        
+        document.getElementById('returnInfo').innerHTML = `
+            <div><strong>Equipment:</strong> ${currentItem.code} - ${currentItem.type}</div>
+            <div><strong>Model:</strong> ${currentItem.model}</div>
+            <div><strong>Currently Assigned To:</strong> ${currentItem.assigned_to}</div>
+            <div><strong>Department:</strong> ${currentItem.department}</div>
+            <div><strong>Date Issued:</strong> ${currentItem.date_issued}</div>
+        `;
+        
+        document.getElementById('returnModal').classList.add('active');
+    }
+
+    function closeReturn() {
+        document.getElementById('returnModal').classList.remove('active');
+        document.getElementById('returnForm').reset();
+        currentItem = null;
+    }
+
+    async function returnEquipment(e) {
+        e.preventDefault();
+        if (!currentItem || !currentUserData.canEdit) return;
+        
+        const returnLoc = document.getElementById('returnLocation').value;
+        const returnNotes = document.getElementById('returnRemarks').value;
+        
+        const update = {
+            location: returnLoc,
+            status: returnLoc === 'Defective' ? 'Defective' : 'Available',
+            assigned_to: '',
+            department: '',
+            date_issued: '',
+            batch: '',
+            accessories: '',
+            remarks: returnNotes || 'Returned from ' + currentItem.assigned_to,
+            updated_at: new Date().toISOString()
+        };
+        
+        try {
+            const { error } = await sb.from('inventory').update(update).eq('id', currentItem.id);
+            if (error) throw error;
+            show('✅ Equipment returned to ' + returnLoc);
+            await load();
+            closeReturn();
+        } catch (e) {
+            console.error(e);
+            show('❌ Error: ' + e.message, true);
+        }
+    }
+
+    function openReassign(id) {
+        if (!currentUserData.canEdit) {
+            show('❌ View only mode - No edit permissions', true);
+            return;
+        }
+        
+        currentItem = inv.find(i => i.id === id);
+        if (!currentItem) return;
+        
+        document.getElementById('reassignInfo').innerHTML = `
+            <div><strong>Equipment:</strong> ${currentItem.code} - ${currentItem.type}</div>
+            <div><strong>Model:</strong> ${currentItem.model}</div>
+            <div><strong>Currently Assigned To:</strong> ${currentItem.assigned_to}</div>
+            <div><strong>Department:</strong> ${currentItem.department}</div>
+        `;
+        
+        document.getElementById('newDateIssued').valueAsDate = new Date();
+        document.getElementById('reassignModal').classList.add('active');
+    }
+
+    function closeReassign() {
+        document.getElementById('reassignModal').classList.remove('active');
+        document.getElementById('reassignForm').reset();
+        currentItem = null;
+    }
+
+    async function reassignEquipment(e) {
+        e.preventDefault();
+        if (!currentItem || !currentUserData.canEdit) return;
+        
+        const update = {
+            assigned_to: document.getElementById('newEmployee').value,
+            department: document.getElementById('newDepartment').value,
+            date_issued: document.getElementById('newDateIssued').value,
+            remarks: document.getElementById('reassignReason').value || `Reassigned from ${currentItem.assigned_to}`,
+            updated_at: new Date().toISOString()
+        };
+        
+        try {
+            const { error } = await sb.from('inventory').update(update).eq('id', currentItem.id);
+            if (error) throw error;
+            show('✅ Equipment reassigned to ' + update.assigned_to);
+            await load();
+            closeReassign();
+        } catch (e) {
+            console.error(e);
+            show('❌ Error: ' + e.message, true);
+        }
+    }
+
+    function edit(id) {
+        openModal(id);
+    }
+
+    async function del(id) {
+        if (!currentUserData.canEdit) {
+            show('❌ View only mode - No edit permissions', true);
+            return;
+        }
+        
+        if (!confirm('Are you sure you want to delete this equipment?')) return;
+        
+        try {
+            const { error } = await sb.from('inventory').delete().eq('id', id);
+            if (error) throw error;
+            show('✅ Equipment deleted');
+            await load();
+        } catch (e) {
+            console.error(e);
+            show('❌ Error: ' + e.message, true);
+        }
+    }
+</script>
+</body>
+</html>
