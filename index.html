@@ -265,12 +265,13 @@
                         <th>Assigned To</th>
                         <th>Department</th>
                         <th>Date Issued</th>
+                        <th>Edited By</th>
                         <th>Remarks</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="inventoryBody">
-                    <tr><td colspan="12" class="empty-state">Loading...</td></tr>
+                    <tr><td colspan="13" class="empty-state">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -444,9 +445,10 @@
         const { createClient } = window.supabase;
     const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // User credentials - HR has full access, Viewer is read-only
+    // User credentials - HrAngel and HrMicah have full access, Viewer is read-only
     const USERS = {
-        'hr': { password: 'hr123', role: 'HR', canEdit: true },
+        'HrAngel': { password: 'angel123', role: 'HR - Angel', canEdit: true },
+        'HrMicah': { password: 'micah123', role: 'HR - Micah', canEdit: true },
         'viewer': { password: 'viewer123', role: 'Viewer', canEdit: false }
     };
 
@@ -479,7 +481,7 @@
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const username = document.getElementById('username').value.trim().toLowerCase();
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             
             const errorDiv = document.getElementById('loginError');
@@ -495,7 +497,7 @@
                 showMainApp();
                 show('✅ Logged in as ' + USERS[username].role);
             } else {
-                errorDiv.textContent = '❌ Invalid username or password. Please use: hr/hr123 or viewer/viewer123';
+                errorDiv.textContent = '❌ Invalid username or password. Please use: HrAngel/angel123, HrMicah/micah123 or viewer/viewer123';
                 errorDiv.style.display = 'block';
             }
         });
@@ -705,7 +707,7 @@
         document.getElementById('tableTitle').textContent = titles[tab];
 
         if (filt.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="12" class="empty-state">No equipment found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="13" class="empty-state">No equipment found</td></tr>';
             return;
         }
 
@@ -741,6 +743,7 @@
                 <td>${i.assigned_to||'-'}</td>
                 <td>${i.department||'-'}</td>
                 <td>${i.date_issued||'-'}</td>
+                <td><strong>${i.edited_by||'-'}</strong></td>
                 <td>${i.remarks||'-'}</td>
                 <td><div class="action-buttons">${actions}</div></td>
             </tr>`;
@@ -783,16 +786,17 @@
             i.status || 'Available',
             i.assigned_to || '-',
             i.department || '-',
-            i.date_issued || '-'
+            i.date_issued || '-',
+            i.edited_by || '-'
         ]);
         
         doc.autoTable({
             startY: doc.lastAutoTable.finalY + 10,
-            head: [['Location', 'Code', 'Type', 'Model', 'Serial', 'Qty', 'Status', 'Assigned', 'Dept', 'Date']],
+            head: [['Location', 'Code', 'Type', 'Model', 'Serial', 'Qty', 'Status', 'Assigned', 'Dept', 'Date', 'Edited By']],
             body: tableData,
             theme: 'striped',
             headStyles: { fillColor: [91, 155, 213] },
-            styles: { fontSize: 8 }
+            styles: { fontSize: 7 }
         });
         
         doc.save(`CNR_Inventory_Report_${new Date().toISOString().split('T')[0]}.pdf`);
@@ -857,6 +861,7 @@
             batch: '',
             accessories: '',
             remarks: document.getElementById('remarks').value,
+            edited_by: currentUserData.username,
             updated_at: new Date().toISOString()
         };
         
@@ -916,6 +921,7 @@
             batch: document.getElementById('batch').value,
             accessories: document.getElementById('accessories').value,
             remarks: document.getElementById('assignRemarks').value || currentItem.remarks,
+            edited_by: currentUserData.username,
             updated_at: new Date().toISOString()
         };
         
@@ -973,6 +979,7 @@
             batch: '',
             accessories: '',
             remarks: returnNotes || 'Returned from ' + currentItem.assigned_to,
+            edited_by: currentUserData.username,
             updated_at: new Date().toISOString()
         };
         
@@ -1023,6 +1030,7 @@
             department: document.getElementById('newDepartment').value,
             date_issued: document.getElementById('newDateIssued').value,
             remarks: document.getElementById('reassignReason').value || `Reassigned from ${currentItem.assigned_to}`,
+            edited_by: currentUserData.username,
             updated_at: new Date().toISOString()
         };
         
