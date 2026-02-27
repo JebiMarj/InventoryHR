@@ -665,7 +665,7 @@
             s.textContent = msg;
             s.className = `connection-status ${err ? 'error' : 'connected'}`;
             s.style.display = 'block';
-            setTimeout(() => s.style.display = 'none', 3000);
+            setTimeout(() => s.style.display = 'none', err ? 8000 : 3000);
         }
 
         async function load() {
@@ -842,7 +842,9 @@
                 status: loc === 'Defective' ? 'Defective' : 'Available',
                 assigned_to: '', department: '', date_issued: '', batch: '', accessories: '',
                 remarks: document.getElementById('remarks').value,
-                edited_by: currentUserData.username, updated_at: new Date().toISOString()
+                edited_by: currentUserData.username,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             };
             try {
                 if (editId) { const { error } = await sb.from('inventory').update(item).eq('id', editId); if (error) throw error; show('✅ Equipment updated'); }
@@ -1019,10 +1021,12 @@
                         accessories: sharedAcc,
                         remarks: entry.remarks,
                         edited_by: currentUserData.username,
+                        created_at: new Date().toISOString(),
                         updated_at: new Date().toISOString()
                     };
-                    const { error } = await sb.from('inventory').insert([record]);
+                    const { data: insertData, error } = await sb.from('inventory').insert([record]).select();
                     if (error) throw error;
+                    if (!insertData || insertData.length === 0) throw new Error('Insert returned no data — check Supabase column constraints');
                 } catch (err) { errors.push(`${entry.name}: ${err.message}`); }
                 done++;
                 progBar.style.width = Math.round((done / entries.length) * 100) + '%';
@@ -1176,10 +1180,12 @@
                         accessories:  sharedAcc,
                         remarks:      unit.remarks || sharedNotes || '',
                         edited_by:    currentUserData.username,
+                        created_at:   new Date().toISOString(),
                         updated_at:   new Date().toISOString()
                     };
-                    const { error } = await sb.from('inventory').insert([record]);
+                    const { data: batchInsert, error } = await sb.from('inventory').insert([record]).select();
                     if (error) throw error;
+                    if (!batchInsert || batchInsert.length === 0) throw new Error('Insert returned no data — check Supabase column constraints');
                 } catch (err) {
                     errors.push(`${unit.name}: ${err.message}`);
                 }
