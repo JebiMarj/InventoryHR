@@ -159,6 +159,10 @@
 </head>
 <body>
     <div id="connectionStatus" class="connection-status" style="display: none;"></div>
+<div id="debugBox" style="display:none;position:fixed;bottom:20px;right:20px;max-width:500px;background:#1a202c;color:#68d391;font-family:monospace;font-size:12px;padding:14px 18px;border-radius:10px;z-index:9999;white-space:pre-wrap;max-height:200px;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+  <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><strong style="color:#fff;">🛠 Debug Log</strong><button onclick="document.getElementById('debugBox').style.display='none'" style="background:none;border:none;color:#fc8181;cursor:pointer;font-size:16px;">✕</button></div>
+  <div id="debugLog"></div>
+</div>
 
     <!-- Login Screen -->
     <div id="loginScreen" class="login-container">
@@ -660,12 +664,20 @@
             load();
         }
 
+        function dbg(msg) {
+            const box = document.getElementById('debugBox');
+            const log = document.getElementById('debugLog');
+            log.textContent += new Date().toLocaleTimeString() + ' — ' + msg + '\n';
+            box.style.display = 'block';
+            console.log('[DBG]', msg);
+        }
+
         function show(msg, err = false) {
             const s = document.getElementById('connectionStatus');
             s.textContent = msg;
             s.className = `connection-status ${err ? 'error' : 'connected'}`;
             s.style.display = 'block';
-            setTimeout(() => s.style.display = 'none', err ? 8000 : 3000);
+            setTimeout(() => s.style.display = 'none', err ? 10000 : 3000);
         }
 
         async function load() {
@@ -675,7 +687,7 @@
                 inv = data || [];
                 updateStats(); updateTypeFilter(); render();
                 show('✅ Connected');
-            } catch (e) { show('❌ Error: ' + e.message, true); }
+            } catch (e) { show('❌ Load Error: ' + e.message, true); dbg('LOAD ERROR: ' + e.message); }
         }
 
         function updateStats() {
@@ -882,7 +894,9 @@
                 batch: document.getElementById('batch').value,
                 accessories: document.getElementById('accessories').value,
                 remarks: document.getElementById('assignRemarks').value || currentItem.remarks,
-                edited_by: currentUserData.username, updated_at: new Date().toISOString()
+                edited_by: currentUserData.username,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             };
             try {
                 const { error } = await sb.from('inventory').update(update).eq('id', currentItem.id);
@@ -1024,10 +1038,12 @@
                         created_at: new Date().toISOString(),
                         updated_at: new Date().toISOString()
                     };
-                    const { data: insertData, error } = await sb.from('inventory').insert([record]).select();
+                    console.log('Inserting record:', JSON.stringify(record));
+                    const { data: adData, error } = await sb.from('inventory').insert([record]).select();
+                    console.log('Insert result:', adData, error);
                     if (error) throw error;
-                    if (!insertData || insertData.length === 0) throw new Error('Insert returned no data — check Supabase column constraints');
-                } catch (err) { errors.push(`${entry.name}: ${err.message}`); }
+                    if (!adData || adData.length === 0) throw new Error('Row not saved — Supabase returned empty. Check column defaults.');
+                } catch (err) { errors.push(`${entry.name}: ${err.message}`); dbg('INSERT FAILED [' + entry.name + ']: ' + err.message + ' | code: ' + (err.code||'?') + ' | details: ' + (err.details||'?') + ' | hint: ' + (err.hint||'?')); }
                 done++;
                 progBar.style.width = Math.round((done / entries.length) * 100) + '%';
                 progText.textContent = `Saving... ${done} / ${entries.length}`;
@@ -1038,7 +1054,9 @@
                 show(`✅ ${entries.length} item(s) added to Deployed`);
             } else {
                 progText.textContent = `⚠️ ${entries.length - errors.length}/${entries.length} saved. ${errors.length} error(s).`;
-                show(`⚠️ Some entries had errors.`, true);
+                const errDetail = errors.join(' | ');
+                progText.textContent += ' Errors: ' + errDetail;
+                show(`⚠️ ERRORS: ${errDetail}`, true);
             }
             await load();
             setTimeout(closeAddDeployed, 1800);
@@ -1183,11 +1201,14 @@
                         created_at:   new Date().toISOString(),
                         updated_at:   new Date().toISOString()
                     };
-                    const { data: batchInsert, error } = await sb.from('inventory').insert([record]).select();
+                    console.log('Batch inserting:', JSON.stringify(record));
+                    const { data: batchData, error } = await sb.from('inventory').insert([record]).select();
+                    console.log('Batch result:', batchData, error);
                     if (error) throw error;
-                    if (!batchInsert || batchInsert.length === 0) throw new Error('Insert returned no data — check Supabase column constraints');
+                    if (!batchData || batchData.length === 0) throw new Error('Row not saved — Supabase returned empty. Check column defaults.');
                 } catch (err) {
                     errors.push(`${unit.name}: ${err.message}`);
+                    dbg('BATCH FAILED [' + unit.name + ']: ' + err.message + ' | code: ' + (err.code||'?') + ' | hint: ' + (err.hint||'?'));
                 }
                 done++;
                 const pct = Math.round((done / units.length) * 100);
@@ -1244,7 +1265,9 @@
                 location: returnLoc, status: returnLoc === 'Defective' ? 'Defective' : 'Available',
                 assigned_to: '', department: '', date_issued: '', batch: '', accessories: '',
                 remarks: document.getElementById('returnRemarks').value || 'Returned from ' + currentItem.assigned_to,
-                edited_by: currentUserData.username, updated_at: new Date().toISOString()
+                edited_by: currentUserData.username,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             };
             try {
                 const { error } = await sb.from('inventory').update(update).eq('id', currentItem.id);
