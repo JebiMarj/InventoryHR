@@ -1004,6 +1004,7 @@
             const sharedBatch = document.getElementById('adSharedBatch').value.trim();
             const sharedAcc = document.getElementById('adSharedAccessories').value.trim();
 
+            const rows = document.getElementById('adEntriesList').querySelectorAll('.ad-entry-row');
             if (rows.length === 0) { show('❌ Please add at least one entry', true); return; }
 
             const entries = [];
