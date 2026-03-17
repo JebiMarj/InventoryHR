@@ -376,6 +376,36 @@
                         <input type="text" id="remarks" placeholder="e.g., Brand New, Used">
                     </div>
                 </div>
+                <!-- Deployed-only fields — shown only when editing a Deployed item -->
+                <div id="deployedFieldsSection" style="display:none;">
+                    <div class="form-section-label" style="color:#ffc000;margin-top:14px;">👤 Deployment Details</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Assigned To (Employee Name)</label>
+                            <input type="text" id="editAssignedTo" placeholder="e.g., Juan dela Cruz">
+                        </div>
+                        <div class="form-group">
+                            <label>Department</label>
+                            <input type="text" id="editDepartment" placeholder="e.g., Operations, HR">
+                        </div>
+                        <div class="form-group full-col">
+                            <label>📍 Address (Unit/House Location)</label>
+                            <input type="text" id="editAddress" placeholder="e.g., 123 Rizal St, Calamba, Laguna">
+                        </div>
+                        <div class="form-group">
+                            <label>Date Issued</label>
+                            <input type="date" id="editDateIssued">
+                        </div>
+                        <div class="form-group">
+                            <label>Batch</label>
+                            <input type="text" id="editBatch" placeholder="e.g., LEGEND, CHARLIE">
+                        </div>
+                        <div class="form-group full-col">
+                            <label>Accessories</label>
+                            <input type="text" id="editAccessories" placeholder="e.g., Mouse, Keyboard, Headset">
+                        </div>
+                    </div>
+                </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-cancel" id="cancelBtn">Cancel</button>
                     <button type="submit" class="btn btn-success">💾 Save Equipment</button>
@@ -630,6 +660,10 @@
             document.getElementById('closeModal').addEventListener('click', closeModalFunc);
             document.getElementById('cancelBtn').addEventListener('click', closeModalFunc);
             document.getElementById('itemForm').addEventListener('submit', saveItem);
+            // Toggle deployed fields when location changes
+            document.getElementById('location').addEventListener('change', function() {
+                document.getElementById('deployedFieldsSection').style.display = this.value === 'Deployed' ? 'block' : 'none';
+            });
 
             document.getElementById('closeAssignModal').addEventListener('click', closeAssign);
             document.getElementById('cancelAssignBtn').addEventListener('click', closeAssign);
@@ -853,10 +887,23 @@
                     document.getElementById('serialNo').value = item.serial_no || '';
                     document.getElementById('qty').value = item.qty || 1;
                     document.getElementById('remarks').value = item.remarks || '';
+
+                    // Show deployed fields if item is deployed
+                    const isDeployed = item.status === 'Deployed' || item.location === 'Deployed';
+                    document.getElementById('deployedFieldsSection').style.display = isDeployed ? 'block' : 'none';
+                    if (isDeployed) {
+                        document.getElementById('editAssignedTo').value = item.assigned_to || '';
+                        document.getElementById('editDepartment').value = item.department || '';
+                        document.getElementById('editAddress').value = item.address || '';
+                        document.getElementById('editDateIssued').value = item.date_issued || '';
+                        document.getElementById('editBatch').value = item.batch || '';
+                        document.getElementById('editAccessories').value = item.accessories || '';
+                    }
                 }
             } else {
                 document.getElementById('modalTitle').textContent = 'Add Equipment';
                 document.getElementById('itemForm').reset();
+                document.getElementById('deployedFieldsSection').style.display = 'none';
             }
             document.getElementById('itemModal').classList.add('active');
         }
@@ -871,17 +918,32 @@
             e.preventDefault();
             if (!currentUserData.canEdit) { show('❌ No edit permissions', true); return; }
             const loc = document.getElementById('location').value;
+            const isDeployed = loc === 'Deployed';
             const item = {
                 location: loc, code: document.getElementById('code').value, type: document.getElementById('type').value,
                 model: document.getElementById('model').value, serial_no: document.getElementById('serialNo').value,
                 qty: parseInt(document.getElementById('qty').value),
-                status: loc === 'Defective' ? 'Defective' : loc === 'Deployed' ? 'Deployed' : 'Available',
-                assigned_to: '', department: '', date_issued: null, batch: '', accessories: '',
+                status: loc === 'Defective' ? 'Defective' : isDeployed ? 'Deployed' : 'Available',
                 remarks: document.getElementById('remarks').value,
                 edited_by: currentUserData.username,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             };
+
+            if (isDeployed) {
+                // Preserve/update all deployed assignment fields
+                item.assigned_to  = document.getElementById('editAssignedTo').value;
+                item.department   = document.getElementById('editDepartment').value;
+                item.address      = document.getElementById('editAddress').value;
+                item.date_issued  = document.getElementById('editDateIssued').value || null;
+                item.batch        = document.getElementById('editBatch').value;
+                item.accessories  = document.getElementById('editAccessories').value;
+            } else {
+                // Clearing back to non-deployed — wipe assignment fields
+                item.assigned_to = ''; item.department = ''; item.address = '';
+                item.date_issued = null; item.batch = ''; item.accessories = '';
+            }
+
             try {
                 if (editId) { const { error } = await sb.from('inventory').update(item).eq('id', editId); if (error) throw error; show('✅ Equipment updated'); }
                 else { const { data: siData, error } = await safeInsert('inventory', item); if (error) throw error; show('✅ Equipment added'); }
