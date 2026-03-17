@@ -256,11 +256,11 @@
                     <tr>
                         <th>Location</th><th>Code</th><th>Type</th><th>Model</th><th>Serial No</th>
                         <th>Qty</th><th>Status</th><th>Assigned To</th><th>Department</th>
-                        <th>Date Issued</th><th>Edited By</th><th>Remarks</th><th>Actions</th>
+                        <th>Address</th><th>Date Issued</th><th>Edited By</th><th>Remarks</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="inventoryBody">
-                    <tr><td colspan="13" class="empty-state">Loading...</td></tr>
+                    <tr><td colspan="14" class="empty-state">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -402,6 +402,10 @@
                     <input type="text" id="department" placeholder="e.g., Operation, HR">
                 </div>
                 <div class="form-group">
+                    <label>📍 Address (Unit/House Location)</label>
+                    <input type="text" id="assignAddress" placeholder="e.g., 123 Rizal St, Calamba, Laguna">
+                </div>
+                <div class="form-group">
                     <label>Date Issued</label>
                     <input type="date" id="dateIssued">
                 </div>
@@ -531,6 +535,10 @@
                 <div class="form-group">
                     <label>New Department</label>
                     <input type="text" id="newDepartment" placeholder="New department">
+                </div>
+                <div class="form-group">
+                    <label>📍 Address (Unit/House Location)</label>
+                    <input type="text" id="newAddress" placeholder="e.g., 123 Rizal St, Calamba, Laguna">
                 </div>
                 <div class="form-group">
                     <label>Date Issued</label>
@@ -760,7 +768,7 @@
             const typeFilter = document.getElementById('sortByType').value;
 
             let filt = inv.filter(i => {
-                const match = !search || ['code','type','model','serial_no','assigned_to','department','remarks'].some(k => i[k]?.toLowerCase().includes(search));
+                const match = !search || ['code','type','model','serial_no','assigned_to','department','address','remarks'].some(k => i[k]?.toLowerCase().includes(search));
                 const typeMatch = !typeFilter || i.type === typeFilter;
                 let tabMatch = true;
                 if (tab === 'stockroom')   tabMatch = i.location === 'Stockroom' && i.status === 'Available';
@@ -773,7 +781,7 @@
             const titles = { all: 'Master Inventory - All Equipment', stockroom: 'Stockroom - Available Equipment', 'main-office': 'Main Office - Available Equipment', deployed: 'Deployed Equipment - Currently In Use', defective: 'Defective Equipment - Needs Repair' };
             document.getElementById('tableTitle').textContent = titles[tab];
 
-            if (!filt.length) { tbody.innerHTML = '<tr><td colspan="13" class="empty-state">No equipment found</td></tr>'; return; }
+            if (!filt.length) { tbody.innerHTML = '<tr><td colspan="14" class="empty-state">No equipment found</td></tr>'; return; }
 
             const canEdit = currentUserData?.canEdit;
             tbody.innerHTML = filt.map(i => {
@@ -803,6 +811,7 @@
                     <td><span class="status-badge ${(i.status||'available').toLowerCase()}">${i.status||'Available'}</span></td>
                     <td>${i.assigned_to||'-'}</td>
                     <td>${i.department||'-'}</td>
+                    <td>${i.address ? `<span title="${i.address}" style="cursor:help;">📍 ${i.address.length > 30 ? i.address.substring(0,30)+'…' : i.address}</span>` : '-'}</td>
                     <td>${i.date_issued||'-'}</td>
                     <td><strong>${i.edited_by||'-'}</strong></td>
                     <td>${i.remarks||'-'}</td>
@@ -825,7 +834,7 @@
                 ['Defective', inv.filter(i => i.location === 'Defective' || i.status === 'Defective').length],
                 ['Total', inv.length]
             ], theme: 'grid', headStyles: { fillColor: [91,155,213] } });
-            doc.autoTable({ startY: doc.lastAutoTable.finalY + 10, head: [['Location','Code','Type','Model','Serial','Qty','Status','Assigned','Dept','Date','Edited By']], body: inv.map(i => [i.location||'-',i.code||'-',i.type||'-',i.model||'-',i.serial_no||'-',i.qty||0,i.status||'Available',i.assigned_to||'-',i.department||'-',i.date_issued||'-',i.edited_by||'-']), theme: 'striped', headStyles: { fillColor: [91,155,213] }, styles: { fontSize: 7 } });
+            doc.autoTable({ startY: doc.lastAutoTable.finalY + 10, head: [['Location','Code','Type','Model','Serial','Qty','Status','Assigned','Dept','Address','Date','Edited By']], body: inv.map(i => [i.location||'-',i.code||'-',i.type||'-',i.model||'-',i.serial_no||'-',i.qty||0,i.status||'Available',i.assigned_to||'-',i.department||'-',i.address||'-',i.date_issued||'-',i.edited_by||'-']), theme: 'striped', headStyles: { fillColor: [91,155,213] }, styles: { fontSize: 7 } });
             doc.save(`CNR_Inventory_Report_${new Date().toISOString().split('T')[0]}.pdf`);
             show('✅ PDF Report Generated');
         }
@@ -905,6 +914,7 @@
                 location: 'Deployed', status: 'Deployed',
                 assigned_to: document.getElementById('assignedTo').value,
                 department: document.getElementById('department').value,
+                address: document.getElementById('assignAddress').value,
                 date_issued: document.getElementById('dateIssued').value || null,
                 batch: document.getElementById('batch').value,
                 accessories: document.getElementById('accessories').value,
@@ -985,6 +995,10 @@
                         <input class="e-dept" type="text" placeholder="e.g., Operations">
                     </div>
                     <div class="form-group span3">
+                        <label>📍 Address (Unit/House Location)</label>
+                        <input class="e-address" type="text" placeholder="e.g., 123 Rizal St, Calamba, Laguna">
+                    </div>
+                    <div class="form-group span3">
                         <label>Remarks (this entry only)</label>
                         <input class="e-remarks" type="text" placeholder="e.g., For WFH setup">
                     </div>
@@ -1017,6 +1031,7 @@
                     serial:  row.querySelector('.e-serial').value.trim(),
                     name:    row.querySelector('.e-name').value.trim(),
                     dept:    row.querySelector('.e-dept').value.trim(),
+                    address: row.querySelector('.e-address').value.trim(),
                     remarks: row.querySelector('.e-remarks').value.trim()
                 });
             });
@@ -1035,6 +1050,7 @@
                         code: entry.code, type: entry.type, model: entry.model,
                         serial_no: entry.serial, qty: 1,
                         assigned_to: entry.name, department: entry.dept,
+                        address: entry.address,
                         date_issued: sharedDate || null, batch: sharedBatch,
                         accessories: sharedAcc,
                         remarks: entry.remarks,
@@ -1102,6 +1118,7 @@
                     dept:    row.querySelector('.u-dept').value,
                     serial:  row.querySelector('.u-serial').value,
                     code:    row.querySelector('.u-code').value,
+                    address: row.querySelector('.u-address').value,
                     remarks: row.querySelector('.u-remarks').value,
                 });
             });
@@ -1134,6 +1151,10 @@
                             <input class="u-serial" type="text" placeholder="e.g., SN-00${n}" value="${p.serial || ''}">
                         </div>
                         <div class="form-group full-width">
+                            <label>📍 Address (Unit/House Location)</label>
+                            <input class="u-address" type="text" placeholder="e.g., 123 Rizal St, Calamba, Laguna" value="${p.address || ''}">
+                        </div>
+                        <div class="form-group full-width">
                             <label>Unit-Specific Notes</label>
                             <input class="u-remarks" type="text" placeholder="Optional notes for this unit only" value="${p.remarks || ''}">
                         </div>
@@ -1162,6 +1183,7 @@
                     dept:    row.querySelector('.u-dept').value.trim(),
                     code:    row.querySelector('.u-code').value.trim()   || batchSourceItem.code || '',
                     serial:  row.querySelector('.u-serial').value.trim() || '',
+                    address: row.querySelector('.u-address').value.trim(),
                     remarks: row.querySelector('.u-remarks').value.trim()
                 });
             });
@@ -1186,6 +1208,7 @@
                         qty:          1,
                         assigned_to:  unit.name,
                         department:   unit.dept,
+                        address:      unit.address,
                         date_issued:  sharedDate || null,
                         batch:        sharedBatch,
                         accessories:  sharedAcc,
@@ -1237,6 +1260,7 @@
                 <div><strong>Model:</strong> ${currentItem.model}</div>
                 <div><strong>Currently Assigned To:</strong> ${currentItem.assigned_to}</div>
                 <div><strong>Department:</strong> ${currentItem.department}</div>
+                ${currentItem.address ? `<div><strong>📍 Address:</strong> ${currentItem.address}</div>` : ''}
                 <div><strong>Date Issued:</strong> ${currentItem.date_issued}</div>`;
             document.getElementById('returnModal').classList.add('active');
         }
@@ -1275,8 +1299,10 @@
                 <div><strong>Equipment:</strong> ${currentItem.code} - ${currentItem.type}</div>
                 <div><strong>Model:</strong> ${currentItem.model}</div>
                 <div><strong>Currently Assigned To:</strong> ${currentItem.assigned_to}</div>
-                <div><strong>Department:</strong> ${currentItem.department}</div>`;
+                <div><strong>Department:</strong> ${currentItem.department}</div>
+                ${currentItem.address ? `<div><strong>📍 Current Address:</strong> ${currentItem.address}</div>` : ''}`;
             document.getElementById('newDateIssued').valueAsDate = new Date();
+            document.getElementById('newAddress').value = currentItem.address || '';
             document.getElementById('reassignModal').classList.add('active');
         }
 
@@ -1292,6 +1318,7 @@
             const update = {
                 assigned_to: document.getElementById('newEmployee').value,
                 department:  document.getElementById('newDepartment').value,
+                address:     document.getElementById('newAddress').value,
                 date_issued: document.getElementById('newDateIssued').value || null,
                 remarks:     document.getElementById('reassignReason').value || `Reassigned from ${currentItem.assigned_to}`,
                 edited_by:   currentUserData.username,
