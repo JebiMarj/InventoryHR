@@ -155,6 +155,26 @@
         .batch-progress p { color: #276749; font-weight: 600; font-size: 14px; margin-bottom: 10px; }
         .progress-bar-wrap { background: #c6f6d5; border-radius: 10px; height: 10px; overflow: hidden; }
         .progress-bar-fill { height: 100%; background: #70ad47; border-radius: 10px; transition: width 0.3s ease; width: 0%; }
+
+        /* ── Equipment History Styles ── */
+        .history-timeline { position: relative; padding: 10px 0; }
+        .history-timeline::before { content: ''; position: absolute; left: 22px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; }
+        .history-event { display: flex; gap: 14px; margin-bottom: 18px; position: relative; }
+        .history-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; z-index: 1; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+        .history-icon.assigned   { background: #ffc000; }
+        .history-icon.returned   { background: #70ad47; }
+        .history-icon.reassigned { background: #5b9bd5; }
+        .history-icon.created    { background: #a370c4; }
+        .history-icon.edited     { background: #718096; }
+        .history-body { flex: 1; background: #f7fafc; border-radius: 8px; padding: 10px 14px; border: 1px solid #e2e8f0; }
+        .history-body-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+        .history-action { font-weight: 700; font-size: 13px; color: #1a202c; }
+        .history-date { font-size: 11px; color: #a0aec0; white-space: nowrap; }
+        .history-detail { font-size: 12px; color: #4a5568; line-height: 1.6; }
+        .history-detail span { display: inline-block; margin-right: 10px; }
+        .history-by { font-size: 11px; color: #718096; margin-top: 4px; }
+        .history-empty { text-align: center; padding: 40px; color: #a0aec0; font-size: 14px; }
+        .btn-history { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
     </style>
 </head>
 <body>
@@ -586,6 +606,18 @@
         </div>
     </div>
 
+    <!-- Equipment History Modal -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content wide">
+            <div class="modal-header">
+                <h2>📜 Equipment History</h2>
+                <button class="close-btn" onclick="closeHistory()">&times;</button>
+            </div>
+            <div id="historyEquipInfo" class="equipment-info"></div>
+            <div id="historyTimeline" class="history-timeline"></div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://qamrtajrxztzelbferqm.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhbXJ0YWpyeHp0emVsYmZlcnFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY3NTA1MDgsImV4cCI6MjA4MjMyNjUwOH0.er7S54C2h3jNUTPtdz-rRkRw6xGNR-8aDpXPlhwYDwM';
@@ -827,12 +859,14 @@
                         <button class="btn btn-primary btn-small" onclick="edit(${i.id})">✏️ Edit</button>
                         <button class="btn btn-warning btn-small" onclick="openReassign(${i.id})">🔄 Reassign</button>
                         <button class="btn btn-success btn-small" onclick="openReturn(${i.id})">↩️ Return</button>
+                        <button class="btn btn-history btn-small" onclick="openHistory(${i.id})">📜 History</button>
                         <button class="btn btn-danger btn-small" onclick="del(${i.id})">🗑️</button>`;
                 } else {
                     actions = `
                         <button class="btn btn-primary btn-small" onclick="edit(${i.id})">✏️ Edit</button>
                         <button class="btn btn-warning btn-small" onclick="openAssign(${i.id})">📦 Assign</button>
                         <button class="btn btn-batch btn-small" onclick="openBatchDeploy(${i.id})" title="Deploy multiple units at once">🚀 Batch</button>
+                        <button class="btn btn-history btn-small" onclick="openHistory(${i.id})">📜 History</button>
                         <button class="btn btn-danger btn-small" onclick="del(${i.id})">🗑️</button>`;
                 }
                 return `<tr>
@@ -988,6 +1022,11 @@
             try {
                 const { error } = await sb.from('inventory').update(update).eq('id', currentItem.id);
                 if (error) throw error;
+                await logHistory(currentItem.id, 'assigned', {
+                    assigned_to: update.assigned_to, department: update.department,
+                    address: update.address, date_issued: update.date_issued,
+                    batch: update.batch, notes: update.remarks
+                });
                 show('✅ Equipment assigned to ' + update.assigned_to);
                 await load(); closeAssign();
             } catch (e) { show('❌ Error: ' + e.message, true); }
@@ -1348,6 +1387,10 @@
             try {
                 const { error } = await sb.from('inventory').update(update).eq('id', currentItem.id);
                 if (error) throw error;
+                await logHistory(currentItem.id, 'returned', {
+                    from_employee: currentItem.assigned_to, from_department: currentItem.department,
+                    returned_to: returnLoc, notes: update.remarks
+                });
                 show('✅ Equipment returned to ' + returnLoc);
                 await load(); closeReturn();
             } catch (e) { show('❌ Error: ' + e.message, true); }
@@ -1390,6 +1433,11 @@
             try {
                 const { error } = await sb.from('inventory').update(update).eq('id', currentItem.id);
                 if (error) throw error;
+                await logHistory(currentItem.id, 'reassigned', {
+                    from_employee: currentItem.assigned_to, from_department: currentItem.department,
+                    assigned_to: update.assigned_to, department: update.department,
+                    address: update.address, date_issued: update.date_issued, notes: update.remarks
+                });
                 show('✅ Equipment reassigned to ' + update.assigned_to);
                 await load(); closeReassign();
             } catch (e) { show('❌ Error: ' + e.message, true); }
@@ -1406,6 +1454,98 @@
                 show('✅ Equipment deleted');
                 await load();
             } catch (e) { show('❌ Error: ' + e.message, true); }
+        }
+
+        /* ══════════════════════════════════════════════════════
+           EQUIPMENT HISTORY
+        ══════════════════════════════════════════════════════ */
+
+        async function logHistory(inventoryId, actionType, details) {
+            try {
+                const record = {
+                    inventory_id: inventoryId,
+                    action_type: actionType,
+                    details: JSON.stringify(details),
+                    performed_by: currentUserData.username,
+                    performed_at: new Date().toISOString()
+                };
+                await sb.from('equipment_history').insert([record]);
+            } catch (e) {
+                console.warn('History log failed (table may not exist yet):', e.message);
+            }
+        }
+
+        async function openHistory(id) {
+            const item = inv.find(i => i.id === id);
+            if (!item) return;
+            document.getElementById('historyEquipInfo').innerHTML = `
+                <div><strong>Equipment:</strong> ${item.code} — ${item.type}</div>
+                <div><strong>Model:</strong> ${item.model}${item.serial_no ? ' &nbsp;|&nbsp; <strong>Serial:</strong> ' + item.serial_no : ''}</div>
+                <div><strong>Current Status:</strong> <span class="status-badge ${(item.status||'available').toLowerCase()}">${item.status||'Available'}</span> &nbsp; <strong>Location:</strong> ${item.location||'-'}</div>`;
+            document.getElementById('historyTimeline').innerHTML = '<div class="history-empty">⏳ Loading history…</div>';
+            document.getElementById('historyModal').classList.add('active');
+
+            try {
+                const { data, error } = await sb.from('equipment_history')
+                    .select('*').eq('inventory_id', id).order('performed_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    document.getElementById('historyTimeline').innerHTML =
+                        '<div class="history-empty">📭 No history recorded yet.<br><small style="color:#cbd5e0;">History is logged automatically when you assign, return, or reassign this equipment.</small></div>';
+                    return;
+                }
+
+                const iconMap = { assigned: { icon: '📦', cls: 'assigned' }, returned: { icon: '↩️', cls: 'returned' }, reassigned: { icon: '🔄', cls: 'reassigned' }, created: { icon: '✨', cls: 'created' }, edited: { icon: '✏️', cls: 'edited' } };
+
+                document.getElementById('historyTimeline').innerHTML = data.map(ev => {
+                    const d = (() => { try { return JSON.parse(ev.details || '{}'); } catch { return {}; } })();
+                    const m = iconMap[ev.action_type] || { icon: '📋', cls: 'edited' };
+                    const dt = ev.performed_at ? new Date(ev.performed_at).toLocaleString('en-PH', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '-';
+
+                    let detailHtml = '';
+                    if (ev.action_type === 'assigned') {
+                        detailHtml = `<span>👤 <strong>To:</strong> ${d.assigned_to||'-'}</span><span>🏢 <strong>Dept:</strong> ${d.department||'-'}</span>${d.date_issued ? `<span>📅 <strong>Date:</strong> ${d.date_issued}</span>` : ''}${d.address ? `<br><span>📍 ${d.address}</span>` : ''}${d.batch ? `<span>🏷️ Batch: ${d.batch}</span>` : ''}${d.notes ? `<br><span>💬 ${d.notes}</span>` : ''}`;
+                    } else if (ev.action_type === 'returned') {
+                        detailHtml = `<span>👤 <strong>From:</strong> ${d.from_employee||'-'}</span>${d.from_department ? `<span>🏢 ${d.from_department}</span>` : ''}<span>📦 <strong>Returned to:</strong> ${d.returned_to||'-'}</span>${d.notes ? `<br><span>💬 ${d.notes}</span>` : ''}`;
+                    } else if (ev.action_type === 'reassigned') {
+                        detailHtml = `<span>👤 <strong>From:</strong> ${d.from_employee||'-'}</span><span>➡️</span><span><strong>To:</strong> ${d.assigned_to||'-'}</span>${d.department ? `<span>🏢 ${d.department}</span>` : ''}${d.date_issued ? `<span>📅 ${d.date_issued}</span>` : ''}${d.address ? `<br><span>📍 ${d.address}</span>` : ''}${d.notes ? `<br><span>💬 ${d.notes}</span>` : ''}`;
+                    } else {
+                        detailHtml = d.notes ? `<span>💬 ${d.notes}</span>` : '';
+                    }
+
+                    const actionLabels = { assigned: '📦 Assigned', returned: '↩️ Returned', reassigned: '🔄 Reassigned', created: '✨ Created', edited: '✏️ Edited' };
+
+                    return `<div class="history-event">
+                        <div class="history-icon ${m.cls}">${m.icon}</div>
+                        <div class="history-body">
+                            <div class="history-body-header">
+                                <span class="history-action">${actionLabels[ev.action_type] || ev.action_type}</span>
+                                <span class="history-date">${dt}</span>
+                            </div>
+                            <div class="history-detail">${detailHtml}</div>
+                            <div class="history-by">By: ${ev.performed_by||'-'}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (e) {
+                document.getElementById('historyTimeline').innerHTML =
+                    `<div class="history-empty">⚠️ Could not load history.<br><small style="color:#e74c3c;">${e.message}</small><br><br><small style="color:#a0aec0;">You need to create the <strong>equipment_history</strong> table in Supabase. See instructions below.</small>
+                    <div style="background:#1a202c;color:#68d391;font-family:monospace;font-size:11px;padding:14px;border-radius:8px;margin-top:12px;text-align:left;">
+CREATE TABLE equipment_history (<br>
+&nbsp;&nbsp;id BIGSERIAL PRIMARY KEY,<br>
+&nbsp;&nbsp;inventory_id BIGINT REFERENCES inventory(id) ON DELETE CASCADE,<br>
+&nbsp;&nbsp;action_type TEXT,<br>
+&nbsp;&nbsp;details JSONB,<br>
+&nbsp;&nbsp;performed_by TEXT,<br>
+&nbsp;&nbsp;performed_at TIMESTAMPTZ DEFAULT NOW()<br>
+);</div></div>`;
+            }
+        }
+
+        function closeHistory() {
+            document.getElementById('historyModal').classList.remove('active');
         }
     </script>
 </body>
