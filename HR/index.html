@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create and Reach Equipment Inventory System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("cnr_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.dataset.theme=t}catch(e){}</script><style>
+:root{--bg:#F5F4F8;--surface:#fff;--ink:#1F1D33;--ink2:#5C5A73;--ink3:#8C8AA3;--line:#E7E5EF;--brand:#5B5784;--on-brand:#fff;--soft:#EEEDF6;--pink:#E53A6F;--side:#25223B;--shadow:0 1px 2px rgba(31,29,51,.06),0 8px 24px -12px rgba(31,29,51,.12);
+--ok:#1B7F54;--ok-bg:#E2F4EB;--wait:#A25F00;--wait-bg:#FFF0D6;--bad:#C4301F;--bad-bg:#FDE8E5;--orange:#F3A43F;--r:10px;--font:'Instrument Sans',system-ui,-apple-system,'Segoe UI',sans-serif}
+[data-theme=dark]{--bg:#141320;--surface:#1D1B2D;--ink:#ECEBF5;--ink2:#A9A7C0;--ink3:#7C7A96;--line:#2E2C44;--brand:#A39FDB;--on-brand:#16142B;--soft:#2A2745;--side:#0F0E19;--shadow:0 1px 2px rgba(0,0,0,.4);--ok:#5FD3A0;--ok-bg:#16392B;--wait:#F3B35C;--wait-bg:#3B2D14;--bad:#FF8A7A;--bad-bg:#40201C}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+/* shell */
+.app{display:grid;grid-template-columns:248px 1fr;min-height:100vh;transition:grid-template-columns .2s}
+body.collapsed .app{grid-template-columns:72px 1fr}
+.side{background:var(--side);color:#C9C7DE;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:16px 12px;z-index:60;overflow:hidden}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 6px 18px;color:#fff}
+.brand img{width:34px;height:34px;object-fit:contain;border-radius:50%;background:#fff;flex-shrink:0}
+.brand b{display:block;font-size:15px;letter-spacing:-.01em;white-space:nowrap}.brand small{color:#9C9AB8;font-size:12px;white-space:nowrap}
+.nav{display:flex;flex-direction:column;gap:2px;flex:1}
+.nav-title{font-size:12px;color:#7F7D9C;padding:12px 10px 6px;white-space:nowrap}
+.tab{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;background:none;border:0;border-radius:8px;color:inherit;cursor:pointer;text-align:left;position:relative;transition:background .15s,color .15s;white-space:nowrap}
+.tab:hover{background:rgba(255,255,255,.07);color:#fff}
+.tab.active{background:rgba(255,255,255,.12);color:#fff;font-weight:600}
+.tab.active::before{content:'';position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--pink)}
+.tab .n{margin-left:auto;font-size:12px;opacity:.75}
+body.collapsed .brand div,body.collapsed .tab span,body.collapsed .nav-title,body.collapsed .who div{display:none}
+.side-foot{border-top:1px solid rgba(255,255,255,.1);padding-top:12px;display:flex;flex-direction:column;gap:6px}
+.who{display:flex;align-items:center;gap:10px;padding:4px 6px;color:#fff;font-size:13px}
+.who small{display:block;color:#9C9AB8;font-size:12px}
+.av{width:30px;height:30px;border-radius:50%;background:var(--soft);color:var(--brand);display:grid;place-items:center;font-size:12px;font-weight:700;flex-shrink:0}
+.side .ghost{color:#C9C7DE}
+.main{min-width:0;padding:0 32px 48px}
+.top{display:flex;align-items:center;gap:12px;padding:20px 0 18px}
+.top h1{font-size:22px;letter-spacing:-.02em;font-weight:650;flex:1;min-width:0}
+.top h1 small{display:block;font-size:13px;font-weight:400;color:var(--ink2);letter-spacing:0;margin-top:1px}
+.conn{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2)}.conn i{width:7px;height:7px;border-radius:50%;background:var(--ink3)}.conn.ok i{background:var(--ok)}.conn.err i{background:var(--bad)}
+.only-m{display:none}
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 16px;border:1px solid transparent;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;transition:background .15s,transform .1s,box-shadow .15s;white-space:nowrap}
+.btn:active{transform:scale(.98)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary,.btn-success,.btn-warning,.btn-batch{background:var(--brand);color:var(--on-brand)}
+.btn-primary:hover:not(:disabled),.btn-success:hover:not(:disabled),.btn-warning:hover:not(:disabled),.btn-batch:hover:not(:disabled){filter:brightness(1.08);box-shadow:0 4px 12px -4px var(--brand)}
+.btn-cancel,.btn-history,.ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn-cancel:hover,.btn-history:hover,.ghost:hover{background:var(--soft)}
+.ghost{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent;font-size:13px;background:none}
+.side .ghost:hover{background:rgba(255,255,255,.07)}
+.btn-danger{background:var(--bad);color:#fff}.btn-danger:hover{filter:brightness(1.1)}
+.btn-small{padding:6px 12px;font-size:12px}
+.btn.loading{pointer-events:none;opacity:.8}.btn.loading::after{content:'';width:13px;height:13px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.icon-btn{width:34px;height:34px;display:grid;place-items:center;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--ink2)}.icon-btn:hover{background:var(--soft);color:var(--ink)}
+/* KPIs */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.stat-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;cursor:pointer;transition:border-color .15s,box-shadow .15s;display:grid;grid-template-columns:1fr auto;gap:2px 8px}
+.stat-card:hover{border-color:var(--brand);box-shadow:var(--shadow)}.stat-card.active{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+.stat-label{font-size:13px;color:var(--ink2);grid-column:1;grid-row:2}
+.stat-value{font-size:30px;font-weight:650;letter-spacing:-.03em;line-height:1.1;grid-column:1;grid-row:1}
+.stat-desc{display:none}
+.stat-card .kic{grid-column:2;grid-row:1/3;align-self:start;width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--soft);color:var(--brand)}
+.stat-card.deployed .kic{background:var(--wait-bg);color:var(--wait)}.stat-card.defective .kic{background:var(--bad-bg);color:var(--bad)}.stat-card.stockroom .kic,.stat-card.main-office .kic{background:var(--ok-bg);color:var(--ok)}
+.dist{margin:14px 0 22px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.dist-bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--line);gap:2px}.dist-bar span{transition:width .5s}
+.dist-leg{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:var(--ink2)}.dist-leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+/* toolbar */
+.actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.actions h3{font-size:16px;font-weight:650}.actions h3 small{font-weight:400;color:var(--ink2);font-size:13px;margin-left:8px}
+.actions-right{display:flex;gap:8px;flex-wrap:wrap}
+.search-bar{display:flex;gap:8px;margin-bottom:14px}
+.search-bar .sw{flex:1;position:relative}.search-bar .sw .ic{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink3)}
+.search-bar input,.search-bar select,.form-group input,.form-group select,.form-group textarea,.unit-count-wrap input{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:13.5px;transition:border-color .15s,box-shadow .15s}
+.search-bar input{padding-left:36px}.search-bar select{width:auto;min-width:160px;cursor:pointer}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--soft)}
+::placeholder{color:var(--ink3)}
+/* table */
+.table-container{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow-x:auto;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;min-width:980px}
+th{padding:11px 16px;text-align:left;font-size:12.5px;font-weight:600;color:var(--ink2);background:var(--bg);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:13px 16px;border-bottom:1px solid var(--line);vertical-align:middle;color:var(--ink2)}
+tbody tr:last-child td{border-bottom:0}tbody tr{transition:background .12s}tbody tr:hover{background:var(--soft)}
+.eq{display:flex;align-items:center;gap:12px}.eq-t b{display:block;color:var(--ink);font-weight:600}.eq-t span{font-size:12.5px;color:var(--ink2)}
+.code{font-weight:650;font-size:12.5px;color:var(--brand);background:var(--soft);padding:3px 8px;border-radius:6px;white-space:nowrap;min-width:78px;text-align:center}
+.who-c{display:flex;align-items:center;gap:10px}.who-c b{display:block;color:var(--ink);font-weight:600}.who-c span{font-size:12.5px;color:var(--ink2)}
+.sub{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--ink3);margin-top:2px;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sub .ic{width:12px;height:12px}
+.muted{color:var(--ink3)}
+.status-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}.status-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.status-badge.available{background:var(--ok-bg);color:var(--ok)}.status-badge.deployed{background:var(--wait-bg);color:var(--wait)}.status-badge.defective{background:var(--bad-bg);color:var(--bad)}
+.loc{font-size:12px;color:var(--ink3);margin-top:3px}
+.row-actions{display:flex;gap:6px;justify-content:flex-end;align-items:center}
+.menu{position:fixed;z-index:1500;min-width:180px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:5px;box-shadow:0 12px 32px -8px rgba(0,0,0,.3);display:none}.menu.open{display:block;animation:pop .12s ease-out}
+.menu button{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;background:none;border-radius:6px;cursor:pointer;font-size:13px;text-align:left}.menu button:hover{background:var(--soft)}.menu .danger{color:var(--bad)}.menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+@keyframes pop{from{opacity:0;transform:translateY(-4px) scale(.98)}}
+.empty-state{text-align:center;padding:56px 24px;color:var(--ink2)}.empty-state .ei{width:48px;height:48px;border-radius:14px;background:var(--soft);color:var(--brand);display:grid;place-items:center;margin:0 auto 14px}.empty-state .ei .ic{width:22px;height:22px}.empty-state b{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}.empty-state .btn{margin-top:16px}
+.sk{height:12px;border-radius:6px;background:linear-gradient(90deg,var(--line),var(--soft),var(--line));background-size:200% 100%;animation:sh 1.2s infinite}@keyframes sh{to{background-position:-200% 0}}
+/* modals */
+.modal{position:fixed;inset:0;background:rgba(18,16,34,.5);backdrop-filter:blur(2px);z-index:1000;display:flex;justify-content:center;align-items:center;padding:16px;visibility:hidden;opacity:0;transition:opacity .18s,visibility .18s}
+.modal.active{visibility:visible;opacity:1}
+.modal-content{background:var(--surface);border-radius:14px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:24px;box-shadow:0 24px 60px -12px rgba(0,0,0,.4);transform:translateY(10px) scale(.98);transition:transform .2s}
+.modal.active .modal-content{transform:none}.modal-content.wide{max-width:860px}.summary-modal .modal-content{max-width:480px}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.modal-header h2{font-size:18px;font-weight:650;letter-spacing:-.01em}
+.close-btn{width:32px;height:32px;border-radius:8px;border:0;background:none;font-size:22px;line-height:1;cursor:pointer;color:var(--ink2)}.close-btn:hover{background:var(--soft);color:var(--ink)}
+.form-group{margin-bottom:14px}.form-group label{display:block;margin-bottom:5px;font-size:12.5px;font-weight:600;color:var(--ink2)}.form-group textarea{resize:vertical}
+.form-section-label{font-size:13px;font-weight:650;color:var(--ink);margin:6px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-grid .form-group{margin-bottom:0}.form-grid .full-col{grid-column:1/-1}
+.form-actions{display:flex;gap:10px;margin-top:22px;justify-content:flex-end}
+.equipment-info{background:var(--bg);border:1px solid var(--line);padding:12px 14px;border-radius:10px;margin-bottom:18px;font-size:13px;color:var(--ink2)}.equipment-info div{margin-bottom:4px}.equipment-info div:last-child{margin:0}.equipment-info strong{color:var(--ink)}
+.error-message{background:var(--bad-bg);color:var(--bad);padding:10px 12px;border-radius:8px;margin-top:12px;font-size:13px;display:none}
+.summary-item{padding:11px 4px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.summary-item:last-child{border:0}.summary-type{font-weight:600}.summary-count{background:var(--soft);color:var(--brand);padding:2px 12px;border-radius:99px;font-weight:650}
+.batch-shared{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:18px}.batch-shared-title,.batch-units-title{font-size:13px;font-weight:650;margin-bottom:10px}
+.batch-shared-grid,.batch-unit-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.batch-shared-grid .form-group,.batch-unit-fields .form-group{margin-bottom:0}.full-width{grid-column:1/-1}
+.batch-units-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;flex-wrap:wrap}.unit-count-wrap{display:flex;align-items:center;gap:8px}.unit-count-wrap label{font-size:13px;color:var(--ink2)}.unit-count-wrap input{width:64px;text-align:center}
+.batch-units-list{display:flex;flex-direction:column;gap:10px;max-height:380px;overflow-y:auto;margin-bottom:16px}
+.batch-unit-row,.ad-entry-row{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;transition:border-color .2s}.batch-unit-row.error,.ad-entry-row.has-error{border-color:var(--bad)!important}
+.batch-unit-row-header,.ad-entry-row-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.unit-badge,.ad-entry-num{background:var(--soft);color:var(--brand);border-radius:50%;width:24px;height:24px;display:grid;place-items:center;font-size:12px;font-weight:700}
+.unit-label,.ad-entry-label{font-size:13px;font-weight:600;flex:1}
+.ad-remove-btn{background:none;border:0;color:var(--ink3);font-size:18px;cursor:pointer;border-radius:6px;width:26px;height:26px}.ad-remove-btn:hover{background:var(--bad-bg);color:var(--bad)}
+.ad-entry-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.ad-entry-fields .form-group{margin-bottom:0}.span3{grid-column:1/-1}
+.batch-unit-fields label,.ad-entry-fields label{font-size:12px}
+.batch-progress{display:none;background:var(--ok-bg);border-radius:10px;padding:14px;text-align:center;margin-bottom:12px}.batch-progress p{color:var(--ok);font-weight:600;margin-bottom:8px}
+.progress-bar-wrap{background:rgba(0,0,0,.1);border-radius:99px;height:8px;overflow:hidden}.progress-bar-fill{height:100%;background:var(--ok);transition:width .3s;width:0}
+.history-timeline{position:relative;padding:4px 0}.history-timeline::before{content:'';position:absolute;left:17px;top:8px;bottom:8px;width:2px;background:var(--line)}
+.history-event{display:flex;gap:14px;margin-bottom:14px;position:relative}
+.history-icon{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;z-index:1;border:3px solid var(--surface);background:var(--soft);color:var(--brand)}
+.history-icon.assigned{background:var(--wait-bg);color:var(--wait)}.history-icon.returned{background:var(--ok-bg);color:var(--ok)}
+.history-body{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.history-body-header{display:flex;justify-content:space-between;gap:10px;margin-bottom:4px}.history-action{font-weight:650}.history-date,.history-by{font-size:12px;color:var(--ink3)}.history-detail{font-size:13px;color:var(--ink2);line-height:1.7}.history-detail span{display:inline-block;margin-right:12px}
+.history-empty{text-align:center;padding:36px;color:var(--ink2)}
+/* toasts & debug */
+#toasts{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px;z-index:3000;pointer-events:none}
+.toast{pointer-events:auto;display:flex;align-items:flex-start;gap:10px;max-width:380px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--ok);border-radius:10px;box-shadow:0 12px 32px -8px rgba(0,0,0,.3);font-size:13.5px;animation:tin .22s ease-out}
+.toast.error{border-left-color:var(--bad)}.toast.warn{border-left-color:var(--orange)}.toast .ic{color:var(--ok);margin-top:1px}.toast.error .ic{color:var(--bad)}.toast.warn .ic{color:var(--wait)}.toast.out{opacity:0;transform:translateX(12px);transition:.2s}
+@keyframes tin{from{opacity:0;transform:translateY(8px)}}
+#debugBox{display:none;position:fixed;left:20px;bottom:20px;max-width:460px;background:#14121F;color:#8FE0B5;font:12px/1.5 ui-monospace,monospace;padding:12px 14px;border-radius:10px;z-index:3000;white-space:pre-wrap;max-height:200px;overflow:auto}
+/* login */
+#loginScreen{--l-bg:#0A0F1C;--l-panel:#131A2E;--l-field:#0B1121;--l-line:#2A3552;--l-ink:#F3F5FB;--l-muted:#9AA5C2;--l-amber:#F3A43F;--l-pink:#E53A6F;background:var(--l-bg);color:var(--l-ink)}
+.login-wrap{min-height:100vh;min-height:100dvh;padding:16px;display:grid}
+.login-card{width:100%;max-width:1680px;margin:0 auto;display:grid;grid-template-columns:minmax(380px,42fr) 58fr;border-radius:28px;overflow:hidden;background:var(--l-panel);border:1px solid rgba(255,255,255,.06);box-shadow:0 30px 80px -30px rgba(0,0,0,.7);animation:loginIn .6s cubic-bezier(.2,.7,.2,1) both}
+@keyframes loginIn{from{opacity:0;transform:translateY(12px) scale(.992)}to{opacity:1;transform:none}}
+.login-panel{display:grid;place-items:center;padding:40px clamp(24px,4vw,64px);background:radial-gradient(120% 70% at 0% 0%,rgba(91,87,132,.28),transparent 60%),var(--l-panel)}
+.login-inner{width:100%;max-width:380px}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:clamp(28px,6vh,56px)}
+.login-brand img{width:44px;height:44px;object-fit:contain;flex-shrink:0}
+.login-brand b{display:block;font-size:17px;letter-spacing:-.01em;line-height:1.15}
+.login-brand span{display:block;font-size:12.5px;color:var(--l-pink);letter-spacing:.01em}
+.login-inner h1{font-size:clamp(30px,3.2vw,38px);line-height:1.1;letter-spacing:-.035em;font-weight:700}
+.login-inner .lead{color:var(--l-muted);font-size:15px;margin:10px 0 28px;max-width:34ch}
+.l-field{margin-bottom:16px}
+.l-field label{display:block;margin-bottom:7px;font-size:13px;font-weight:600;color:#C9D1E8}
+.l-control{position:relative}
+.l-control input{width:100%;height:52px;padding:0 52px 0 16px;border-radius:14px;border:1px solid var(--l-line);background:var(--l-field);color:var(--l-ink);font-size:15.5px;outline:2px solid transparent;transition:border-color .18s,box-shadow .18s,background .18s}
+.l-control input::placeholder{color:#5F6B8E}
+.l-control input:hover{border-color:#3A4870}
+.l-control input:focus{border-color:var(--l-amber);box-shadow:0 0 0 4px rgba(243,164,63,.18)}
+.l-control input[aria-invalid=true]{border-color:var(--l-pink)}
+.l-control input:-webkit-autofill{-webkit-text-fill-color:var(--l-ink);box-shadow:0 0 0 40px var(--l-field) inset}
+.l-ic{position:absolute;right:16px;top:50%;width:20px;height:20px;margin-top:-10px;color:#6F7CA3;pointer-events:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.l-toggle{position:absolute;right:6px;top:6px;width:40px;height:40px;border:0;border-radius:10px;background:none;color:#8C98BA;display:grid;place-items:center;cursor:pointer;transition:background .15s,color .15s}
+.l-toggle:hover{background:rgba(255,255,255,.07);color:#fff}
+.l-toggle:focus-visible{outline:2px solid var(--l-amber);outline-offset:0}
+.l-toggle .l-ic{position:static;margin:0;width:20px;height:20px}
+.l-toggle .off{display:none}.l-toggle[aria-pressed=true] .on{display:none}.l-toggle[aria-pressed=true] .off{display:block}
+.login-inner .error-message{margin:16px 0 0;padding:12px 14px;border-radius:12px;background:rgba(229,58,111,.12);border:1px solid rgba(229,58,111,.4);color:#FFC4BC;font-size:13.5px}
+.login-submit{width:100%;height:52px;margin-top:20px;border:0;border-radius:14px;background:var(--l-amber);color:#1B1304;font-size:15.5px;font-weight:700;letter-spacing:.005em;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:background .18s,transform .15s,box-shadow .18s}
+.login-submit:hover:not(:disabled){background:#F7B255;transform:translateY(-1px);box-shadow:0 12px 26px -12px rgba(243,164,63,.7)}
+.login-submit:active:not(:disabled){transform:none}
+.login-submit:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.login-submit:disabled{cursor:progress;opacity:.75}
+.login-submit .spin{display:none;width:18px;height:18px;border:2.5px solid rgba(27,19,4,.3);border-top-color:#1B1304;border-radius:50%;animation:lspin .7s linear infinite}
+.login-submit.is-loading .spin{display:block}
+@keyframes lspin{to{transform:rotate(360deg)}}
+.login-foot{margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08);font-size:13px;color:var(--l-muted);line-height:1.6}
+.login-foot small{display:block;font-size:12px;color:#6F7CA3}
+.login-art{position:relative;overflow:hidden;border-radius:200px 0 0 200px;background:#1B2A4A;min-height:360px}
+.login-art svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.login-art .ct{font:700 15px var(--font);fill:#F3F5FB}.login-art .cs{font:500 12px var(--font);fill:#A9B8DC}
+.login-art .chip{animation:chipFloat 7s ease-in-out infinite}.login-art .chip.c2{animation-delay:-3.5s}
+@keyframes chipFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+/* responsive */
+@media(max-width:1100px){.stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:860px){
+.app,body.collapsed .app{grid-template-columns:1fr}
+.side{position:fixed;left:0;top:0;width:260px;transform:translateX(-100%);transition:transform .22s}body.nav-open .side{transform:none}
+body.collapsed .brand div,body.collapsed .tab span,body.collapsed .nav-title,body.collapsed .who div{display:block}
+body.nav-open::after{content:'';position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50}
+.only-m{display:grid}.only-d,.conn{display:none}.main{padding:0 16px 32px}.stats{grid-template-columns:repeat(2,1fr)}.stat-card:last-child{grid-column:1/-1}
+.search-bar{flex-direction:column}.search-bar select{width:100%}
+.table-container{background:none;border:0;box-shadow:none;overflow:visible}table{min-width:0}thead{display:none}table,tbody,tr,td{display:block;width:100%}
+tr{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;padding:6px 14px}
+td{border:0;padding:8px 0;display:flex;justify-content:space-between;gap:12px;align-items:center}td::before{content:attr(data-label);font-size:12px;color:var(--ink3);flex-shrink:0}td.first::before,td.last::before{display:none}
+tbody tr:hover{background:var(--surface)}
+.modal{align-items:flex-end;padding:0}.modal-content{border-radius:16px 16px 0 0;max-height:94vh;transform:translateY(24px)}
+.form-grid,.batch-shared-grid,.batch-unit-fields,.ad-entry-fields{grid-template-columns:1fr}.form-actions{flex-direction:column-reverse}.form-actions .btn{width:100%}
+.login-wrap{padding:0}.login-card{grid-template-columns:1fr;grid-template-rows:auto 1fr;border-radius:0;border:0}
+.login-art{order:-1;min-height:0;height:clamp(160px,38vw,300px);border-radius:0 0 40px 40px}.login-art .chip{display:none}
+.login-panel{place-items:start center;padding:28px 22px 36px}.login-brand{margin-bottom:24px}.login-inner .lead{margin-bottom:22px}
+.l-control input{font-size:16px}#toasts{left:16px;right:16px;bottom:12px}.toast{max-width:none}}
+@media(min-width:861px) and (max-width:1100px){.login-card{grid-template-columns:minmax(360px,46fr) 54fr}.login-art{border-radius:120px 0 0 120px}}
+@media(max-height:760px) and (min-width:861px){.login-panel{padding-top:24px;padding-bottom:24px}.login-brand{margin-bottom:28px}.login-inner .lead{margin-bottom:20px}.login-foot{margin-top:24px}}
+@media(min-width:600px) and (max-width:860px){.login-panel{place-items:center}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol><symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></symbol><symbol id="i-building" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 8h1M14 8h1M9 12h1M14 12h1M10 21v-4h4v4"/></symbol><symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M16 5a3.2 3.2 0 0 1 0 6M18 14.8c1.8.7 3 2.4 3 5.2"/></symbol><symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17.5v.01"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></symbol><symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol><symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol><symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></symbol><symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></symbol><symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol><symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4M16 8l4 4-4 4M20 12H9"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol><symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h14M13 6l6 6-6 6"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></symbol><symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 13 6.5 5h11L20 13v6H4z"/><path d="M4 13h5l1 2h4l1-2h5"/></symbol><symbol id="i-sidebar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol></svg>
+<div id="toasts" aria-live="polite"></div>
+<div id="debugBox"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong style="color:#fff">Debug log</strong><button onclick="document.getElementById('debugBox').style.display='none'" style="background:none;border:0;color:#FF9A8A;cursor:pointer">&times;</button></div><div id="debugLog"></div></div>
+<div class="menu" id="menu" role="menu"></div>
+
+<div id="loginScreen">
+  <main class="login-wrap">
+    <div class="login-card">
+      <section class="login-panel" aria-labelledby="loginTitle">
+        <div class="login-inner">
+          <div class="login-brand"><img src="CnrMark.png" alt="" width="44" height="44"><div><b>Create &amp; Reach</b><span>Virtual Assistant Services</span></div></div>
+          <h1 id="loginTitle">Welcome back</h1>
+          <p class="lead">Sign in to see where every device is and who has it.</p>
+          <form id="loginForm">
+            <div class="l-field"><label for="username">Username</label><div class="l-control"><input type="text" id="username" required placeholder="Your username" autocomplete="username" autocapitalize="none" spellcheck="false"><svg class="l-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4 3.4-6.2 7.5-6.2s7.5 2.2 7.5 6.2"/></svg></div></div>
+            <div class="l-field"><label for="password">Password</label><div class="l-control"><input type="password" id="password" required placeholder="Your password" autocomplete="current-password"><button type="button" class="l-toggle" id="pwToggle" aria-label="Show password" aria-pressed="false" aria-controls="password"><svg class="l-ic on" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="l-ic off" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 5.6A10 10 0 0 1 12 5.5c6.4 0 10 6.5 10 6.5a17 17 0 0 1-3.2 4M6.5 6.9C3.7 8.7 2 12 2 12s3.6 6.5 10 6.5c1.6 0 3-.4 4.2-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></button></div></div>
+            <div id="loginError" class="error-message" role="alert"></div>
+            <button type="submit" class="login-submit"><span class="spin" aria-hidden="true"></span><span class="label">Sign in</span></button>
+          </form>
+          <div class="login-foot">Need access? Ask your HR administrator.<small>&copy; 2026 Create &amp; Reach Virtual Assistant Services</small></div>
+        </div>
+      </section>
+      <aside class="login-art" aria-hidden="true">
+<svg viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="lgSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16213D"/><stop offset="1" stop-color="#2A5683"/></linearGradient>
+<linearGradient id="lgLid" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#DADEE6"/><stop offset="1" stop-color="#A9B0BF"/></linearGradient>
+<linearGradient id="lgBeam" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".26"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+</defs>
+<rect width="800" height="800" fill="#101830"/>
+<rect x="296" width="504" height="660" fill="url(#lgSky)"/>
+<circle cx="372" cy="128" r="70" fill="#F6E7C1" opacity=".12"/><circle cx="372" cy="128" r="36" fill="#F6E7C1"/>
+<g fill="#fff" opacity=".7"><circle cx="330" cy="60" r="2"/><circle cx="450" cy="90" r="1.6"/><circle cx="520" cy="40" r="2.2"/><circle cx="560" cy="170" r="1.5"/><circle cx="700" cy="70" r="2"/><circle cx="740" cy="190" r="1.6"/><circle cx="320" cy="230" r="1.6"/><circle cx="690" cy="300" r="1.8"/></g>
+<polygon points="660,0 800,0 800,300" fill="url(#lgBeam)"/>
+<rect x="250" width="46" height="660" fill="#7B4A3B"/><rect x="610" width="40" height="660" fill="#8A5240"/>
+<ellipse cx="190" cy="720" rx="170" ry="120" fill="#F3A43F" opacity=".07"/>
+<rect x="345" y="440" width="300" height="230" rx="60" fill="#A94E35"/>
+<path d="M360 660V520Q360 462 420 452H520Q580 462 580 520V660Z" fill="#F5F7FC"/>
+<path d="M2 0" fill="none"/>
+<path d="M372 360Q372 282 470 276Q568 282 568 360V440Q568 462 548 462H392Q372 462 372 440Z" fill="#2A2438"/>
+<rect x="450" y="425" width="40" height="44" rx="14" fill="#EFC3A6"/>
+<path d="M436 452L470 492L504 452Z" fill="#EFC3A6"/>
+<path d="M436 452L470 492M504 452L470 492" stroke="#D5DCEC" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M440 462L462 518M500 462L478 518" stroke="#4D6FD1" stroke-width="5" stroke-linecap="round"/>
+<rect x="450" y="516" width="40" height="62" rx="7" fill="#fff" stroke="#D5DCEC"/><circle cx="470" cy="536" r="8" fill="#F3A43F"/><rect x="458" y="552" width="24" height="4" rx="2" fill="#C5CDE0"/><rect x="458" y="561" width="16" height="4" rx="2" fill="#C5CDE0"/>
+<path d="M362 505Q338 560 360 598L408 602Q398 556 418 512Z" fill="#E7EBF5"/><path d="M578 505Q602 560 580 598L532 602Q542 556 522 512Z" fill="#E7EBF5"/>
+<ellipse cx="384" cy="604" rx="24" ry="13" fill="#F8D5BD"/><ellipse cx="556" cy="604" rx="24" ry="13" fill="#F8D5BD"/>
+<ellipse cx="470" cy="372" rx="80" ry="86" fill="#F8D5BD"/>
+<path d="M390 372Q384 292 470 288Q556 292 550 372Q540 330 500 322Q470 340 440 322Q400 330 390 372Z" fill="#2A2438"/>
+<path d="M390 372Q386 420 400 446H416Q404 410 408 372Z M550 372Q554 420 540 446H524Q536 410 532 372Z" fill="#2A2438"/>
+<ellipse cx="436" cy="386" rx="9" ry="12" fill="#2A2438"/><ellipse cx="504" cy="386" rx="9" ry="12" fill="#2A2438"/><circle cx="439" cy="381" r="3.5" fill="#fff"/><circle cx="507" cy="381" r="3.5" fill="#fff"/>
+<path d="M424 364Q436 358 448 364M492 364Q504 358 516 364" stroke="#2A2438" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+<path d="M468 398Q474 404 467 406" stroke="#E0A98E" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M454 414Q470 428 486 414" stroke="#B8574A" stroke-width="4" stroke-linecap="round" fill="none"/>
+<ellipse cx="418" cy="408" rx="11" ry="7" fill="#F08A8A" opacity=".35"/><ellipse cx="522" cy="408" rx="11" ry="7" fill="#F08A8A" opacity=".35"/>
+<path d="M384 356Q384 268 470 262Q556 268 556 356" stroke="#F3A43F" stroke-width="9" fill="none" stroke-linecap="round"/>
+<rect x="370" y="352" width="26" height="58" rx="13" fill="#F3A43F"/><rect x="544" y="352" width="26" height="58" rx="13" fill="#F3A43F"/>
+<path d="M552 404Q552 440 508 444" stroke="#F3A43F" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="500" cy="444" rx="12" ry="8" fill="#E53A6F"/>
+<rect y="640" width="800" height="160" fill="#3A2217"/><rect y="640" width="800" height="8" fill="#5E3A28"/>
+<ellipse cx="470" cy="734" rx="160" ry="12" fill="#000" opacity=".25"/>
+<rect x="340" y="592" width="260" height="140" rx="12" fill="url(#lgLid)"/><circle cx="470" cy="662" r="13" fill="#F4F6FA" opacity=".9"/><rect x="326" y="728" width="288" height="10" rx="5" fill="#9AA1B1"/>
+<rect x="142" y="688" width="112" height="18" rx="6" fill="#C7653F"/><path d="M150 706H246L234 772Q198 780 162 772Z" fill="#A8502F"/>
+<path d="M198 690Q150 620 168 560Q214 610 198 690Z" fill="#3E8E5A"/><path d="M198 690Q246 630 232 566Q184 610 198 690Z" fill="#2F7449"/><path d="M198 690Q196 610 200 540Q226 610 198 690Z" fill="#4BA56B"/><path d="M198 690Q130 660 108 610Q168 624 198 690Z" fill="#2F7449"/><path d="M198 690Q266 664 290 618Q226 626 198 690Z" fill="#3E8E5A"/>
+<ellipse cx="690" cy="742" rx="52" ry="12" fill="#E9D9B0"/><rect x="662" y="690" width="56" height="52" rx="10" fill="#F3E6C4"/><path d="M718 704Q744 706 740 724Q736 738 716 734" stroke="#F3E6C4" stroke-width="7" fill="none"/><ellipse cx="690" cy="692" rx="26" ry="7" fill="#6B3F26"/>
+<path d="M680 670Q672 656 682 644M700 672Q692 656 704 642" stroke="#fff" stroke-opacity=".35" stroke-width="4" stroke-linecap="round" fill="none"/>
+<g transform="translate(52 150)"><g class="chip"><rect width="214" height="58" rx="16" fill="#fff" fill-opacity=".09" stroke="#fff" stroke-opacity=".18"/><circle cx="30" cy="29" r="14" fill="#F3A43F"/><path d="M23 29l5 5 9-10" stroke="#1B1304" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="54" y="26" class="ct">Laptop</text><text x="54" y="44" class="cs">Assigned to Marketing</text></g></g>
+<g transform="translate(552 250)"><g class="chip c2"><rect width="206" height="58" rx="16" fill="#fff" fill-opacity=".09" stroke="#fff" stroke-opacity=".18"/><circle cx="30" cy="29" r="14" fill="#E53A6F"/><path d="M23 29l5 5 9-10" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="54" y="26" class="ct">Headset</text><text x="54" y="44" class="cs">Returned, in stock</text></g></g>
+</svg>
+
+      </aside>
+    </div>
+  </main>
+</div>
+
+<div id="mainApp" style="display:none;">
+<div class="app">
+  <aside class="side" id="side">
+    <div class="brand"><img src="CnrLogo.png" alt=""><div><b>Create &amp; Reach</b><small>Equipment inventory</small></div></div>
+    <nav class="nav">
+      <div class="nav-title">Equipment</div>
+      <button class="tab active" data-tab="all"><svg class="ic"><use href="#i-layers"/></svg><span>All equipment</span><span class="n" id="n-all"></span></button>
+      <button class="tab" data-tab="stockroom"><svg class="ic"><use href="#i-box"/></svg><span>Stockroom</span><span class="n" id="n-stockroom"></span></button>
+      <button class="tab" data-tab="main-office"><svg class="ic"><use href="#i-building"/></svg><span>Main Office</span><span class="n" id="n-main-office"></span></button>
+      <button class="tab" data-tab="deployed"><svg class="ic"><use href="#i-users"/></svg><span>Deployed</span><span class="n" id="n-deployed"></span></button>
+      <button class="tab" data-tab="defective"><svg class="ic"><use href="#i-alert"/></svg><span>Defective</span><span class="n" id="n-defective"></span></button>
+    </nav>
+    <div class="side-foot">
+      <div class="who"><div class="av" id="userAv">U</div><div><b id="currentUser"></b><small id="userRole"></small></div></div>
+      <button class="ghost" onclick="logout()"><svg class="ic"><use href="#i-logout"/></svg><span>Sign out</span></button>
+      <button class="ghost only-d" onclick="document.body.classList.toggle('collapsed')"><svg class="ic"><use href="#i-sidebar"/></svg><span>Collapse</span></button>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="top">
+      <button class="icon-btn only-m" onclick="document.body.classList.toggle('nav-open')" aria-label="Menu"><svg class="ic"><use href="#i-menu"/></svg></button>
+      <h1 id="pageTitle">All equipment<small>Track where every item is and who has it</small></h1>
+      <div class="conn" id="conn"><i></i><span>Connecting</span></div>
+      <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme"><svg class="ic"><use href="#i-moon"/></svg></button>
+    </header>
+    <div class="stats">
+      <div class="stat-card stockroom" onclick="toggleStatSummary('stockroom')" id="stockroomCard"><div class="stat-label">In stockroom</div><div class="stat-value" id="stockroomCount">0</div><div class="stat-desc"></div><div class="kic"><svg class="ic"><use href="#i-box"/></svg></div></div>
+      <div class="stat-card main-office" onclick="toggleStatSummary('main-office')" id="mainOfficeCard"><div class="stat-label">At main office</div><div class="stat-value" id="mainOfficeCount">0</div><div class="stat-desc"></div><div class="kic"><svg class="ic"><use href="#i-building"/></svg></div></div>
+      <div class="stat-card deployed" onclick="toggleStatSummary('deployed')" id="deployedCard"><div class="stat-label">Deployed</div><div class="stat-value" id="deployedCount">0</div><div class="stat-desc"></div><div class="kic"><svg class="ic"><use href="#i-users"/></svg></div></div>
+      <div class="stat-card defective" onclick="toggleStatSummary('defective')" id="defectiveCard"><div class="stat-label">Defective</div><div class="stat-value" id="defectiveCount">0</div><div class="stat-desc"></div><div class="kic"><svg class="ic"><use href="#i-alert"/></svg></div></div>
+      <div class="stat-card total" onclick="toggleStatSummary('all')" id="totalCard"><div class="stat-label">Total items</div><div class="stat-value" id="totalCount">0</div><div class="stat-desc"></div><div class="kic"><svg class="ic"><use href="#i-layers"/></svg></div></div>
+    </div>
+    <div class="dist" id="dist"></div>
+    <div class="actions">
+      <h3 id="tableTitle">All equipment</h3>
+      <div class="actions-right">
+        <button class="btn btn-cancel" onclick="generatePDF()"><svg class="ic"><use href="#i-file"/></svg>PDF report</button>
+        <button class="btn btn-primary" id="addDeployedBtn" style="display:none;"><svg class="ic"><use href="#i-users"/></svg>Add deployed</button>
+        <button class="btn btn-primary" id="addItemBtn"><svg class="ic"><use href="#i-plus"/></svg>Add equipment</button>
+      </div>
+    </div>
+    <div class="search-bar">
+      <div class="sw"><svg class="ic"><use href="#i-search"/></svg><input type="text" id="searchInput" placeholder="Search code, type, model, person, department"></div>
+      <select id="sortByType"><option value="">All types</option></select>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead><tr><th>Equipment</th><th>Serial no.</th><th>Qty</th><th>Status</th><th>Assigned to</th><th>Issued</th><th></th></tr></thead>
+        <tbody id="inventoryBody"><tr><td class="first"><div class="sk" style="width:70%"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td class="last"><div class="sk" style="width:60px;margin-left:auto"></div></td></tr><tr><td class="first"><div class="sk" style="width:70%"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td class="last"><div class="sk" style="width:60px;margin-left:auto"></div></td></tr><tr><td class="first"><div class="sk" style="width:70%"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td class="last"><div class="sk" style="width:60px;margin-left:auto"></div></td></tr><tr><td class="first"><div class="sk" style="width:70%"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td class="last"><div class="sk" style="width:60px;margin-left:auto"></div></td></tr><tr><td class="first"><div class="sk" style="width:70%"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td class="last"><div class="sk" style="width:60px;margin-left:auto"></div></td></tr><tr><td class="first"><div class="sk" style="width:70%"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td><div class="sk"></div></td><td class="last"><div class="sk" style="width:60px;margin-left:auto"></div></td></tr></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+</div>
+
+<div class="modal" id="confirmModal"><div class="modal-content" style="max-width:420px">
+  <div class="modal-header"><h2 id="confirmTitle">Are you sure?</h2></div>
+  <p id="confirmMsg" style="color:var(--ink2)"></p>
+  <div class="form-actions"><button type="button" class="btn btn-cancel" id="confirmNo">Cancel</button><button type="button" class="btn btn-danger" id="confirmYes">Delete</button></div>
+</div></div>
+
+<!-- Add Deployed Modal (Batch Entry) -->
+    <div class="modal" id="addDeployedModal">
+        <div class="modal-content wide">
+            <div class="modal-header">
+                <h2>Add Items — Directly to Deployed</h2>
+                <button class="close-btn" id="closeAddDeployedModal">&times;</button>
+            </div>
+
+            <p style="font-size:12px;color:#856404;background:#fffbeb;border:1px solid #ffc000;border-radius:6px;padding:10px;margin-bottom:18px;">
+                Fill in each entry below. You can add as many as you need — all will be saved to Deployed in one go.
+            </p>
+
+            <!-- Shared fields for all entries -->
+            <div class="batch-shared">
+                <div class="batch-shared-title">Shared Details — applied to all entries below</div>
+                <div class="batch-shared-grid">
+                    <div class="form-group">
+                        <label>Date Issued *</label>
+                        <input type="date" id="adSharedDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Batch Name</label>
+                        <input type="text" id="adSharedBatch" placeholder="e.g., LEGEND, CHARLIE">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Accessories (same for all)</label>
+                        <input type="text" id="adSharedAccessories" placeholder="e.g., Mouse, Keyboard, Headset">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Entry list header -->
+            <div class="batch-units-header">
+                <div class="batch-units-title">Deployment Entries</div>
+                <button type="button" class="btn btn-success btn-small" onclick="addDeployedEntry()">Add Entry</button>
+            </div>
+
+            <!-- Dynamic entry rows -->
+            <div class="batch-units-list" id="adEntriesList"></div>
+
+            <!-- Save progress -->
+            <div class="batch-progress" id="adProgress">
+                <p id="adProgressText">Saving entries...</p>
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar-fill" id="adProgressBar"></div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-cancel" id="cancelAddDeployedBtn">Cancel</button>
+                <button type="button" class="btn btn-warning" id="saveAllDeployedBtn" onclick="saveAllDeployed()">Save All to Deployed</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Modal -->
+    <div class="modal summary-modal" id="summaryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="summaryTitle">Summary</h2>
+                <button class="close-btn" onclick="closeSummary()">&times;</button>
+            </div>
+            <div id="summaryContent"></div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Item Modal -->
+    <div class="modal" id="itemModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Equipment</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <form id="itemForm" novalidate>
+                <div class="form-section-label" style="color:#5b9bd5;">Equipment Details</div>
+                <div class="form-grid">
+                    <div class="form-group full-col">
+                        <label>Location</label>
+                        <select id="location">
+                            <option value="Stockroom">Stockroom</option>
+                            <option value="Main Office">Main Office</option>
+                            <option value="Deployed">Deployed</option>
+                            <option value="Defective">Defective</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Equipment Code</label>
+                        <input type="text" id="code" placeholder="e.g., MAC-0031">
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <input type="text" id="type" placeholder="e.g., Laptop">
+                    </div>
+                    <div class="form-group">
+                        <label>Model</label>
+                        <input type="text" id="model" placeholder="e.g., Macbook Air M1">
+                    </div>
+                    <div class="form-group">
+                        <label>Serial Number</label>
+                        <input type="text" id="serialNo" placeholder="Optional">
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        <input type="number" id="qty" value="1" min="1">
+                    </div>
+                    <div class="form-group full-col">
+                        <label>Remarks</label>
+                        <input type="text" id="remarks" placeholder="e.g., Brand New, Used">
+                    </div>
+                </div>
+                <!-- Deployed-only fields — shown only when editing a Deployed item -->
+                <div id="deployedFieldsSection" style="display:none;">
+                    <div class="form-section-label" style="color:#ffc000;margin-top:14px;">Deployment Details</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Assigned To (Employee Name)</label>
+                            <input type="text" id="editAssignedTo" placeholder="e.g., Juan dela Cruz">
+                        </div>
+                        <div class="form-group">
+                            <label>Department</label>
+                            <input type="text" id="editDepartment" placeholder="e.g., Operations, HR">
+                        </div>
+                        <div class="form-group full-col">
+                            <label>Address (Unit/House Location)</label>
+                            <input type="text" id="editAddress" placeholder="e.g., 123 Rizal St, Calamba, Laguna">
+                        </div>
+                        <div class="form-group">
+                            <label>Date Issued</label>
+                            <input type="date" id="editDateIssued">
+                        </div>
+                        <div class="form-group">
+                            <label>Batch</label>
+                            <input type="text" id="editBatch" placeholder="e.g., LEGEND, CHARLIE">
+                        </div>
+                        <div class="form-group full-col">
+                            <label>Accessories</label>
+                            <input type="text" id="editAccessories" placeholder="e.g., Mouse, Keyboard, Headset">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-success">Save Equipment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Assign Modal (Single) -->
+    <div class="modal" id="assignModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Assign Equipment to Employee</h2>
+                <button class="close-btn" id="closeAssignModal">&times;</button>
+            </div>
+            <div id="assignInfo" class="equipment-info"></div>
+            <form id="assignForm" novalidate>
+                <div class="form-group">
+                    <label>Assigned To (Employee Name)</label>
+                    <input type="text" id="assignedTo" placeholder="e.g., Ghay Rosel">
+                </div>
+                <div class="form-group">
+                    <label>Department</label>
+                    <input type="text" id="department" placeholder="e.g., Operation, HR">
+                </div>
+                <div class="form-group">
+                    <label>Address (Unit/House Location)</label>
+                    <input type="text" id="assignAddress" placeholder="e.g., 123 Rizal St, Calamba, Laguna">
+                </div>
+                <div class="form-group">
+                    <label>Date Issued</label>
+                    <input type="date" id="dateIssued">
+                </div>
+                <div class="form-group">
+                    <label>Batch</label>
+                    <input type="text" id="batch" placeholder="e.g., LEGEND, CHARLIE">
+                </div>
+                <div class="form-group">
+                    <label>Accessories</label>
+                    <input type="text" id="accessories" placeholder="e.g., Mouse, Keyboard, Headset">
+                </div>
+                <div class="form-group">
+                    <label>Assignment Notes</label>
+                    <textarea id="assignRemarks" rows="2" placeholder="Any notes about this assignment"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" id="cancelAssignBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Assign Equipment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══ BATCH DEPLOY MODAL ══ -->
+    <div class="modal" id="batchModal">
+        <div class="modal-content wide">
+            <div class="modal-header">
+                <h2>Batch Deploy Units</h2>
+                <button class="close-btn" id="closeBatchModal">&times;</button>
+            </div>
+
+            <div id="batchEquipInfo" class="equipment-info"></div>
+
+            <!-- Shared info for all units -->
+            <div class="batch-shared">
+                <div class="batch-shared-title">Shared Info — applied to all units</div>
+                <div class="batch-shared-grid">
+                    <div class="form-group">
+                        <label>Date Issued *</label>
+                        <input type="date" id="batchDateIssued">
+                    </div>
+                    <div class="form-group">
+                        <label>Batch Name</label>
+                        <input type="text" id="batchName" placeholder="e.g., LEGEND, CHARLIE">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Accessories (for all units)</label>
+                        <input type="text" id="batchAccessories" placeholder="e.g., Mouse, Keyboard, Headset">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>General Notes</label>
+                        <input type="text" id="batchGeneralNotes" placeholder="Optional notes applied to all units">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unit count control -->
+            <div class="batch-units-header">
+                <div class="batch-units-title">Units to Deploy</div>
+                <div class="unit-count-wrap">
+                    <label>Number of units:</label>
+                    <input type="number" id="batchUnitCount" value="2" min="1" max="50">
+                    <button type="button" class="btn btn-primary btn-small" onclick="rebuildBatchRows()">Update</button>
+                </div>
+            </div>
+
+            <!-- Per-unit rows -->
+            <div class="batch-units-list" id="batchUnitsList"></div>
+
+            <!-- Progress bar (shown during save) -->
+            <div class="batch-progress" id="batchProgress">
+                <p id="batchProgressText">Deploying units...</p>
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar-fill" id="batchProgressBar"></div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-cancel" id="cancelBatchBtn">Cancel</button>
+                <button type="button" class="btn btn-batch" id="confirmBatchBtn" onclick="submitBatchDeploy()">Deploy All Units</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Return Modal -->
+    <div class="modal" id="returnModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Return Equipment</h2>
+                <button class="close-btn" id="closeReturnModal">&times;</button>
+            </div>
+            <div id="returnInfo" class="equipment-info"></div>
+            <form id="returnForm" novalidate>
+                <div class="form-group">
+                    <label>Return To</label>
+                    <select id="returnLocation">
+                        <option value="Stockroom">Stockroom</option>
+                        <option value="Main Office">Main Office</option>
+                        <option value="Defective">Defective (If damaged)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Return Notes</label>
+                    <textarea id="returnRemarks" rows="3" placeholder="e.g., Returned in good condition, minor scratches, etc."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" id="cancelReturnBtn">Cancel</button>
+                    <button type="submit" class="btn btn-success">Return Equipment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reassign Modal -->
+    <div class="modal" id="reassignModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Reassign Equipment</h2>
+                <button class="close-btn" id="closeReassignModal">&times;</button>
+            </div>
+            <div id="reassignInfo" class="equipment-info"></div>
+            <form id="reassignForm" novalidate>
+                <div class="form-group">
+                    <label>New Employee</label>
+                    <input type="text" id="newEmployee" placeholder="New employee name">
+                </div>
+                <div class="form-group">
+                    <label>New Department</label>
+                    <input type="text" id="newDepartment" placeholder="New department">
+                </div>
+                <div class="form-group">
+                    <label>Address (Unit/House Location)</label>
+                    <input type="text" id="newAddress" placeholder="e.g., 123 Rizal St, Calamba, Laguna">
+                </div>
+                <div class="form-group">
+                    <label>Date Issued</label>
+                    <input type="date" id="newDateIssued">
+                </div>
+                <div class="form-group">
+                    <label>Reassignment Reason</label>
+                    <textarea id="reassignReason" rows="2" placeholder="e.g., Employee transferred, replacement needed"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" id="cancelReassignBtn">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Reassign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Equipment History Modal -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content wide">
+            <div class="modal-header">
+                <h2>Equipment History</h2>
+                <button class="close-btn" onclick="closeHistory()">&times;</button>
+            </div>
+            <div id="historyEquipInfo" class="equipment-info"></div>
+            <div id="historyTimeline" class="history-timeline"></div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://qamrtajrxztzelbferqm.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhbXJ0YWpyeHp0emVsYmZlcnFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY3NTA1MDgsImV4cCI6MjA4MjMyNjUwOH0.er7S54C2h3jNUTPtdz-rRkRw6xGNR-8aDpXPlhwYDwM';
+        const { createClient } = window.supabase;
+        const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function dbg(msg) {
+            const box = document.getElementById('debugBox');
+            const log = document.getElementById('debugLog');
+            if (log) { log.textContent += new Date().toLocaleTimeString() + ' — ' + msg + '\n'; box.style.display = 'block'; }
+            console.log('[DBG]', msg);
+        }
+
+        async function safeInsert(table, record) {
+            const { data, error } = await sb.from(table).insert([record]).select();
+            if (!error) return { data, error: null };
+            if (error.code === 'PGRST204' || (error.message && error.message.includes('schema cache'))) {
+                const colMatch = error.message.match(/find the '(\w+)' column/);
+                if (colMatch) {
+                    dbg('Stripping unknown column: ' + colMatch[1]);
+                    const cleaned = { ...record };
+                    delete cleaned[colMatch[1]];
+                    return await safeInsert(table, cleaned);
+                }
+            }
+            return { data: null, error };
+        }
+
+        const USERS = {
+            'HrAngel': { password: 'angel123', role: 'HR - Angel', canEdit: true },
+            'HrMicah': { password: 'micah123', role: 'HR - Micah', canEdit: true },
+            'viewer':  { password: 'viewer123', role: 'Viewer', canEdit: false }
+        };
+
+        let currentUserData = null;
+        let inv = [];
+        let tab = 'all';
+        let editId = null;
+        let currentItem = null;
+        let activeStat = null;
+        let batchSourceItem = null;
+
+        // Login UI helper: locks the form while a sign-in attempt is running.
+        function setLoginBusy(busy) {
+            const btn = document.querySelector('#loginForm .login-submit');
+            if (busy && btn.disabled) return false;
+            btn.disabled = busy;
+            btn.classList.toggle('is-loading', busy);
+            btn.querySelector('.label').textContent = busy ? 'Signing in…' : 'Sign in';
+            return true;
+        }
+
+        window.addEventListener('load', function () {
+            const saved = sessionStorage.getItem('cnr_user');
+            if (saved) {
+                try { currentUserData = JSON.parse(saved); showMainApp(); }
+                catch (e) { sessionStorage.removeItem('cnr_user'); }
+            }
+
+            document.getElementById('loginForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                const u = document.getElementById('username').value.trim();
+                const p = document.getElementById('password').value;
+                const errDiv = document.getElementById('loginError');
+                if (!setLoginBusy(true)) return;
+                if (USERS[u] && USERS[u].password === p) {
+                    currentUserData = { username: u, role: USERS[u].role, canEdit: USERS[u].canEdit };
+                    sessionStorage.setItem('cnr_user', JSON.stringify(currentUserData));
+                    errDiv.style.display = 'none';
+                    showMainApp();
+                    show('✅ Logged in as ' + USERS[u].role);
+                    setLoginBusy(false);
+                } else {
+                    errDiv.textContent = 'Incorrect username or password. Check both and try again.';
+                    errDiv.style.display = 'block';
+                    document.getElementById('username').setAttribute('aria-invalid', 'true');
+                    document.getElementById('password').setAttribute('aria-invalid', 'true');
+                    setLoginBusy(false);
+                    document.getElementById('password').select();
+                }
+            });
+
+            ['username', 'password'].forEach(function (id) {
+                document.getElementById(id).addEventListener('input', function () {
+                    document.getElementById('loginError').style.display = 'none';
+                    document.getElementById('username').removeAttribute('aria-invalid');
+                    document.getElementById('password').removeAttribute('aria-invalid');
+                });
+            });
+
+            document.getElementById('pwToggle').addEventListener('click', function () {
+                const pw = document.getElementById('password');
+                const show = pw.type === 'password';
+                pw.type = show ? 'text' : 'password';
+                this.setAttribute('aria-pressed', String(show));
+                this.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+                pw.focus();
+            });
+
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('addItemBtn').addEventListener('click', () => openModal());
+            document.getElementById('closeModal').addEventListener('click', closeModalFunc);
+            document.getElementById('cancelBtn').addEventListener('click', closeModalFunc);
+            document.getElementById('itemForm').addEventListener('submit', saveItem);
+            // Toggle deployed fields when location changes
+            document.getElementById('location').addEventListener('change', function() {
+                document.getElementById('deployedFieldsSection').style.display = this.value === 'Deployed' ? 'block' : 'none';
+            });
+
+            document.getElementById('closeAssignModal').addEventListener('click', closeAssign);
+            document.getElementById('cancelAssignBtn').addEventListener('click', closeAssign);
+            document.getElementById('assignForm').addEventListener('submit', assignEquipment);
+
+            document.getElementById('closeBatchModal').addEventListener('click', closeBatch);
+            document.getElementById('cancelBatchBtn').addEventListener('click', closeBatch);
+
+            document.getElementById('closeReturnModal').addEventListener('click', closeReturn);
+            document.getElementById('cancelReturnBtn').addEventListener('click', closeReturn);
+            document.getElementById('returnForm').addEventListener('submit', returnEquipment);
+
+            document.getElementById('closeReassignModal').addEventListener('click', closeReassign);
+            document.getElementById('cancelReassignBtn').addEventListener('click', closeReassign);
+            document.getElementById('reassignForm').addEventListener('submit', reassignEquipment);
+
+            // Add Deployed button
+            document.getElementById('addDeployedBtn').addEventListener('click', openAddDeployed);
+            document.getElementById('closeAddDeployedModal').addEventListener('click', closeAddDeployed);
+            document.getElementById('cancelAddDeployedBtn').addEventListener('click', closeAddDeployed);
+
+            document.getElementById('searchInput').addEventListener('input', render);
+            document.getElementById('sortByType').addEventListener('change', render);
+
+            document.querySelectorAll('.tab').forEach(t => {
+                t.addEventListener('click', function () {
+                    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+                    t.classList.add('active');
+                    tab = t.dataset.tab;
+                    document.getElementById('addDeployedBtn').style.display = (tab === 'deployed' && currentUserData?.canEdit) ? 'inline-flex' : 'none';
+                    document.body.classList.remove('nav-open');
+                    render();
+                });
+            });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeMenu(); document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active')); } });
+            document.addEventListener('click', e => { if (!e.target.closest('.menu,.more-btn')) closeMenu(); });
+            window.addEventListener('scroll', closeMenu, true);
+            document.body.addEventListener('click', e => { if (e.target.closest('.modal-header .close-btn') === null && document.body.classList.contains('nav-open') && !e.target.closest('.side,.only-m')) document.body.classList.remove('nav-open'); });
+
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function (e) {
+                    if (e.target === modal) modal.classList.remove('active');
+                });
+            });
+        }
+
+        function logout() {
+            sessionStorage.removeItem('cnr_user');
+            currentUserData = null;
+            document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('mainApp').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('password').type = 'password';
+            document.getElementById('pwToggle').setAttribute('aria-pressed', 'false');
+            document.getElementById('pwToggle').setAttribute('aria-label', 'Show password');
+        }
+
+        function showMainApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            document.getElementById('currentUser').textContent = currentUserData.username;
+            document.getElementById('userAv').textContent = currentUserData.username.slice(0,2).toUpperCase();
+            document.getElementById('userRole').textContent = currentUserData.role + (currentUserData.canEdit ? '' : ' · View only');
+            if (!currentUserData.canEdit) document.getElementById('addItemBtn').disabled = true;
+            load();
+        }
+
+        function show(msg, err = false) {
+            const warn = !err && /\u26A0/.test(msg);
+            const text = String(msg).replace(/^[^A-Za-z0-9(]+/, '');
+            const t = document.createElement('div');
+            t.className = 'toast' + (err ? ' error' : warn ? ' warn' : '');
+            t.innerHTML = ic(err ? 'alert' : warn ? 'info' : 'check') + '<span></span>';
+            t.querySelector('span').textContent = text;
+            document.getElementById('toasts').appendChild(t);
+            setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 220); }, err || warn ? 8000 : 3000);
+        }
+        function setConn(ok, msg) {
+            const c = document.getElementById('conn'); c.className = 'conn ' + (ok ? 'ok' : 'err');
+            c.querySelector('span').textContent = ok ? 'Live' : (msg || 'Offline');
+        }
+        function ic(n) { return '<svg class="ic"><use href="#i-' + n + '"/></svg>'; }
+        function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        function toggleTheme() {
+            const d = document.documentElement, n = d.dataset.theme === 'dark' ? 'light' : 'dark';
+            d.dataset.theme = n; try { localStorage.setItem('cnr_theme', n); } catch (e) {} syncThemeIcon();
+        }
+        function syncThemeIcon() { const b = document.getElementById('themeBtn'); if (b) b.innerHTML = ic(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon'); }
+        function ask(title, msg, yes) {
+            return new Promise(res => {
+                const m = document.getElementById('confirmModal');
+                document.getElementById('confirmTitle').textContent = title;
+                document.getElementById('confirmMsg').textContent = msg;
+                document.getElementById('confirmYes').textContent = yes;
+                const end = v => { m.classList.remove('active'); res(v); };
+                document.getElementById('confirmYes').onclick = () => end(true);
+                document.getElementById('confirmNo').onclick = () => end(false);
+                m.classList.add('active');
+            });
+        }
+
+        async function load() {
+            try {
+                const { data, error } = await sb.from('inventory').select('*').order('created_at', { ascending: false });
+                if (error) throw error;
+                inv = data || [];
+                updateStats(); updateTypeFilter(); render();
+                setConn(true);
+            } catch (e) { setConn(false, 'Connection error'); show('Error: ' + e.message, true); }
+        }
+
+        function updateStats() {
+            document.getElementById('stockroomCount').textContent = inv.filter(i => i.location === 'Stockroom' && i.status === 'Available').length;
+            document.getElementById('mainOfficeCount').textContent = inv.filter(i => i.location === 'Main Office' && i.status === 'Available').length;
+            document.getElementById('deployedCount').textContent = inv.filter(i => i.status === 'Deployed').length;
+            document.getElementById('defectiveCount').textContent = inv.filter(i => i.location === 'Defective' || i.status === 'Defective').length;
+            document.getElementById('totalCount').textContent = inv.length;
+            const av = inv.filter(i => i.status === 'Available').length, dp = inv.filter(i => i.status === 'Deployed').length, df = inv.filter(i => i.location === 'Defective' || i.status === 'Defective').length;
+            const N = { all: inv.length, stockroom: +document.getElementById('stockroomCount').textContent, 'main-office': +document.getElementById('mainOfficeCount').textContent, deployed: dp, defective: df };
+            Object.keys(N).forEach(k => { const e = document.getElementById('n-' + k); if (e) e.textContent = N[k]; });
+            const tot = inv.length || 1, pc = n => (n / tot * 100).toFixed(2) + '%';
+            document.getElementById('dist').innerHTML = inv.length ? `<div class="dist-bar"><span style="width:${pc(av)};background:var(--ok)"></span><span style="width:${pc(dp)};background:var(--orange)"></span><span style="width:${pc(df)};background:var(--bad)"></span></div><div class="dist-leg"><span><i style="background:var(--ok)"></i>Available ${av}</span><span><i style="background:var(--orange)"></i>Deployed ${dp}</span><span><i style="background:var(--bad)"></i>Defective ${df}</span></div>` : '';
+        }
+
+        function updateTypeFilter() {
+            const types = [...new Set(inv.map(i => i.type).filter(Boolean))].sort();
+            const sel = document.getElementById('sortByType');
+            const cur = sel.value; sel.innerHTML = '<option value="">All types</option>';
+            types.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o); });
+            sel.value = types.includes(cur) ? cur : '';
+        }
+
+        function toggleStatSummary(statType) {
+            document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+            if (activeStat === statType) { activeStat = null; closeSummary(); return; }
+            activeStat = statType;
+            const map = { 'stockroom': 'stockroomCard', 'main-office': 'mainOfficeCard', 'deployed': 'deployedCard', 'defective': 'defectiveCard', 'all': 'totalCard' };
+            document.getElementById(map[statType] || 'totalCard').classList.add('active');
+            showSummary(statType);
+        }
+
+        function showSummary(statType) {
+            const filters = {
+                'stockroom':   [i => i.location === 'Stockroom' && i.status === 'Available',   'Stockroom Summary by Type'],
+                'main-office': [i => i.location === 'Main Office' && i.status === 'Available', 'Main Office Summary by Type'],
+                'deployed':    [i => i.status === 'Deployed',                                   'Deployed Equipment by Type'],
+                'defective':   [i => i.location === 'Defective' || i.status === 'Defective',   'Defective Equipment by Type'],
+                'all':         [() => true,                                                     'Total Inventory by Type']
+            };
+            const [fn, title] = filters[statType] || filters['all'];
+            const filt = inv.filter(fn);
+            const summary = {};
+            filt.forEach(item => { const t = item.type || 'Uncategorized'; summary[t] = (summary[t] || 0) + (item.qty || 1); });
+            document.getElementById('summaryTitle').textContent = title;
+            document.getElementById('summaryContent').innerHTML = Object.keys(summary).sort().map(t =>
+                `<div class="summary-item"><span class="summary-type">${t}</span><span class="summary-count">${summary[t]}</span></div>`
+            ).join('') || '<div class="empty-state">No items found</div>';
+            document.getElementById('summaryModal').classList.add('active');
+        }
+
+        function closeSummary() {
+            document.getElementById('summaryModal').classList.remove('active');
+            document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+            activeStat = null;
+        }
+
+        function render() {
+            const tbody = document.getElementById('inventoryBody');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const typeFilter = document.getElementById('sortByType').value;
+
+            let filt = inv.filter(i => {
+                const match = !search || ['code','type','model','serial_no','assigned_to','department','address','remarks'].some(k => i[k]?.toLowerCase().includes(search));
+                const typeMatch = !typeFilter || i.type === typeFilter;
+                let tabMatch = true;
+                if (tab === 'stockroom')   tabMatch = i.location === 'Stockroom' && i.status === 'Available';
+                if (tab === 'main-office') tabMatch = i.location === 'Main Office' && i.status === 'Available';
+                if (tab === 'deployed')    tabMatch = i.status === 'Deployed';
+                if (tab === 'defective')   tabMatch = i.location === 'Defective' || i.status === 'Defective';
+                return match && typeMatch && tabMatch;
+            });
+
+            const titles = { all: 'All equipment', stockroom: 'Stockroom', 'main-office': 'Main Office', deployed: 'Deployed', defective: 'Defective' };
+            const subs = { all: 'Track where every item is and who has it', stockroom: 'Available and ready to issue', 'main-office': 'Available at the main office', deployed: 'Currently in use by staff', defective: 'Needs repair or replacement' };
+            document.getElementById('tableTitle').innerHTML = esc(titles[tab]) + `<small>${filt.length} item${filt.length === 1 ? '' : 's'}</small>`;
+            document.getElementById('pageTitle').innerHTML = esc(titles[tab]) + `<small>${subs[tab]}</small>`;
+
+            if (!filt.length) {
+                const filtered = search || typeFilter;
+                const canAdd = currentUserData?.canEdit;
+                const copy = filtered ? ['No matches', 'Try a different search or clear the type filter.']
+                    : tab === 'defective' ? ['Nothing defective', 'Equipment marked defective will show up here.']
+                    : tab === 'deployed' ? ['Nothing deployed yet', 'Assign equipment to a team member to see it here.']
+                    : ['No equipment yet', 'Add your first item to start tracking your inventory.'];
+                const btn = filtered ? '<button class="btn btn-cancel" onclick="document.getElementById(\'searchInput\').value=\'\';document.getElementById(\'sortByType\').value=\'\';render()">Clear filters</button>'
+                    : (canAdd && (tab === 'all' || tab === 'stockroom' || tab === 'main-office') ? `<button class="btn btn-primary" onclick="openModal()">${ic('plus')}Add equipment</button>` : '');
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><div class="ei">${ic(filtered ? 'search' : 'inbox')}</div><b>${copy[0]}</b>${copy[1]}<br>${btn}</td></tr>`;
+                return;
+            }
+
+            const canEdit = currentUserData?.canEdit;
+            const ini = n => (n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+            tbody.innerHTML = filt.map(i => {
+                const dep = i.status === 'Deployed';
+                const primary = !canEdit ? '<span class="muted" style="font-size:12px">View only</span>'
+                    : dep ? `<button class="btn btn-cancel btn-small" onclick="openReturn(${i.id})">${ic('undo')}Return</button>`
+                          : `<button class="btn btn-primary btn-small" onclick="openAssign(${i.id})">${ic('arrow')}Assign</button>`;
+                const more = canEdit ? `<button class="icon-btn more-btn" onclick="openMenu(event,${i.id})" aria-label="More actions">${ic('more')}</button>` : '';
+                const st = (i.status || 'Available');
+                return `<tr>
+                    <td class="first"><div class="eq"><span class="code">${esc(i.code) || '-'}</span><div class="eq-t"><b>${esc(i.type) || '-'}</b><span>${esc(i.model) || ''}</span>${i.remarks ? `<div class="sub" title="${esc(i.remarks)}">${esc(i.remarks)}</div>` : ''}</div></div></td>
+                    <td data-label="Serial no.">${esc(i.serial_no) || '<span class="muted">-</span>'}</td>
+                    <td data-label="Qty"><b style="color:var(--ink)">${i.qty || 0}</b></td>
+                    <td data-label="Status"><div><span class="status-badge ${st.toLowerCase()}">${esc(st)}</span><div class="loc">${esc(i.location) || ''}</div></div></td>
+                    <td data-label="Assigned to">${i.assigned_to ? `<div class="who-c"><div class="av">${esc(ini(i.assigned_to))}</div><div><b>${esc(i.assigned_to)}</b><span>${esc(i.department) || ''}</span>${i.address ? `<div class="sub" title="${esc(i.address)}">${ic('pin')}${esc(i.address)}</div>` : ''}</div></div>` : '<span class="muted">Unassigned</span>'}</td>
+                    <td data-label="Issued" title="${i.edited_by ? 'Last edited by ' + esc(i.edited_by) : ''}">${esc(i.date_issued) || '<span class="muted">-</span>'}</td>
+                    <td class="last"><div class="row-actions">${primary}${more}</div></td>
+                </tr>`;
+            }).join('');
+        }
+
+        function closeMenu() { document.getElementById('menu').classList.remove('open'); }
+        function openMenu(ev, id) {
+            ev.stopPropagation();
+            const i = inv.find(x => x.id === id); if (!i) return;
+            const m = document.getElementById('menu');
+            const row = (fn, icon, label, cls = '') => `<button class="${cls}" onclick="closeMenu();${fn}">${ic(icon)}${label}</button>`;
+            m.innerHTML = row(`edit(${id})`, 'edit', 'Edit details')
+                + (i.status === 'Deployed' ? row(`openReassign(${id})`, 'swap', 'Reassign') : row(`openBatchDeploy(${id})`, 'users', 'Batch deploy'))
+                + row(`openHistory(${id})`, 'history', 'View history') + '<hr>' + row(`del(${id})`, 'trash', 'Delete', 'danger');
+            const r = ev.currentTarget.getBoundingClientRect();
+            m.classList.add('open');
+            const h = m.offsetHeight, w = m.offsetWidth;
+            m.style.top = (r.bottom + h + 8 > innerHeight ? r.top - h - 4 : r.bottom + 4) + 'px';
+            m.style.left = Math.max(8, r.right - w) + 'px';
+        }
+
+        async function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            doc.setFontSize(18); doc.text('Create & Reach Equipment Inventory Report', 14, 20);
+            doc.setFontSize(10);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 27);
+            doc.text(`By: ${currentUserData.username} (${currentUserData.role})`, 14, 32);
+            doc.autoTable({ startY: 40, head: [['Category','Count']], body: [
+                ['Stockroom', inv.filter(i => i.location === 'Stockroom' && i.status === 'Available').length],
+                ['Main Office', inv.filter(i => i.location === 'Main Office' && i.status === 'Available').length],
+                ['Deployed', inv.filter(i => i.status === 'Deployed').length],
+                ['Defective', inv.filter(i => i.location === 'Defective' || i.status === 'Defective').length],
+                ['Total', inv.length]
+            ], theme: 'grid', headStyles: { fillColor: [91,155,213] } });
+            doc.autoTable({ startY: doc.lastAutoTable.finalY + 10, head: [['Location','Code','Type','Model','Serial','Qty','Status','Assigned','Dept','Address','Date','Edited By']], body: inv.map(i => [i.location||'-',i.code||'-',i.type||'-',i.model||'-',i.serial_no||'-',i.qty||0,i.status||'Available',i.assigned_to||'-',i.department||'-',i.address||'-',i.date_issued||'-',i.edited_by||'-']), theme: 'striped', headStyles: { fillColor: [91,155,213] }, styles: { fontSize: 7 } });
+            doc.save(`CNR_Inventory_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+            show('✅ PDF Report Generated');
+        }
+
+        function openModal(id = null) {
+            if (!currentUserData.canEdit) { show('❌ View only mode - No edit permissions', true); return; }
+            editId = id;
+            if (id) {
+                const item = inv.find(i => i.id === id);
+                if (item) {
+                    document.getElementById('modalTitle').textContent = 'Edit Equipment';
+                    document.getElementById('location').value = item.location || 'Stockroom';
+                    document.getElementById('code').value = item.code || '';
+                    document.getElementById('type').value = item.type || '';
+                    document.getElementById('model').value = item.model || '';
+                    document.getElementById('serialNo').value = item.serial_no || '';
+                    document.getElementById('qty').value = item.qty || 1;
+                    document.getElementById('remarks').value = item.remarks || '';
+
+                    // Show deployed fields if item is deployed
+                    const isDeployed = item.status === 'Deployed' || item.location === 'Deployed';
+                    document.getElementById('deployedFieldsSection').style.display = isDeployed ? 'block' : 'none';
+                    if (isDeployed) {
+                        document.getElementById('editAssignedTo').value = item.assigned_to || '';
+                        document.getElementById('editDepartment').value = item.department || '';
+                        document.getElementById('editAddress').value = item.address || '';
+                        document.getElementById('editDateIssued').value = item.date_issued || '';
+                        document.getElementById('editBatch').value = item.batch || '';
+                        document.getElementById('editAccessories').value = item.accessories || '';
+                    }
+                }
+            } else {
+                document.getElementById('modalTitle').textContent = 'Add Equipment';
+                document.getElementById('itemForm').reset();
+                document.getElementById('deployedFieldsSection').style.display = 'none';
+            }
+            document.getElementById('itemModal').classList.add('active');
+        }
+
+        function closeModalFunc() {
+            document.getElementById('itemModal').classList.remove('active');
+            document.getElementById('itemForm').reset();
+            editId = null;
+        }
+
+        async function saveItem(e) {
+            e.preventDefault();
+            if (!currentUserData.canEdit) { show('❌ No edit permissions', true); return; }
+            const loc = document.getElementById('location').value;
+            const isDeployed = loc === 'Deployed';
+            const item = {
+                location: loc, code: document.getElementById('code').value, type: document.getElementById('type').value,
+                model: document.getElementById('model').value, serial_no: document.getElementById('serialNo').value,
+                qty: parseInt(document.getElementById('qty').value),
+                status: loc === 'Defective' ? 'Defective' : isDeployed ? 'Deployed' : 'Available',
+                remarks: document.getElementById('remarks').value,
+                edited_by: currentUserData.username,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            if (isDeployed) {
+                // Preserve/update all deployed assignment fields
+                item.assigned_to  = document.getElementById('editAssignedTo').value;
+                item.department   = document.getElementById('editDepartment').value;
+                item.address      = document.getElementById('editAddress').value;
+                item.date_issued  = document.getElementById('editDateIssued').value || null;
+                item.batch        = document.getElementById('editBatch').value;
+                item.accessories  = document.getElementById('editAccessories').value;
+            } else {
+                // Clearing back to non-deployed — wipe assignment fields
+                item.assigned_to = ''; item.department = ''; item.address = '';
+                item.date_issued = null; item.batch = ''; item.accessories = '';
+            }
+
+            try {
+                if (editId) { const { error } = await sb.from('inventory').update(item).eq('id', editId); if (error) throw error; show('✅ Equipment updated'); }
+                else { const { data: siData, error } = await safeInsert('inventory', item); if (error) throw error; show('✅ Equipment added'); }
+                await load(); closeModalFunc();
+            } catch (e) { show('❌ Error: ' + e.message, true); }
+        }
+
+        function openAssign(id) {
+            if (!currentUserData.canEdit) { show('❌ View only mode - No edit permissions', true); return; }
+            currentItem = inv.find(i => i.id === id);
+            if (!currentItem) return;
+            document.getElementById('assignInfo').innerHTML = `
+                <div><strong>Equipment:</strong> ${currentItem.code} - ${currentItem.type}</div>
+                <div><strong>Model:</strong> ${currentItem.model}</div>
+                <div><strong>Current Location:</strong> ${currentItem.location}</div>`;
+            document.getElementById('dateIssued').valueAsDate = new Date();
+            document.getElementById('assignModal').classList.add('active');
+        }
+
+        function closeAssign() {
+            document.getElementById('assignModal').classList.remove('active');
+            document.getElementById('assignForm').reset();
+            currentItem = null;
+        }
+
+        async function assignEquipment(e) {
+            e.preventDefault();
+            if (!currentItem || !currentUserData.canEdit) return;
+            const update = {
+                location: 'Deployed', status: 'Deployed',
+                assigned_to: document.getElementById('assignedTo').value,
+                department: document.getElementById('department').value,
+                address: document.getElementById('assignAddress').value,
+                date_issued: document.getElementById('dateIssued').value || null,
+                batch: document.getElementById('batch').value,
+                accessories: document.getElementById('accessories').value,
+                remarks: document.getElementById('assignRemarks').value || currentItem.remarks,
+                edited_by: currentUserData.username,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+            try {
+                const { error } = await sb.from('inventory').update(update).eq('id', currentItem.id);
+                if (error) throw error;
+                await logHistory(currentItem.id, 'assigned', {
+                    assigned_to: update.assigned_to, department: update.department,
+                    address: update.address, date_issued: update.date_issued,
+                    batch: update.batch, notes: update.remarks
+                });
+                show('✅ Equipment assigned to ' + update.assigned_to);
+                await load(); closeAssign();
+            } catch (e) { show('❌ Error: ' + e.message, true); }
+        }
+
+        /* ══════════════════════════════════════════════════════
+           ADD DIRECTLY TO DEPLOYED (Batch Entry)
+        ══════════════════════════════════════════════════════ */
+
+        let adEntryCount = 0;
+
+        function openAddDeployed() {
+            if (!currentUserData.canEdit) { show('❌ View only mode - No edit permissions', true); return; }
+            // Reset
+            adEntryCount = 0;
+            document.getElementById('adEntriesList').innerHTML = '';
+            document.getElementById('adSharedDate').valueAsDate = new Date();
+            document.getElementById('adSharedBatch').value = '';
+            document.getElementById('adSharedAccessories').value = '';
+            document.getElementById('adProgress').style.display = 'none';
+            document.getElementById('saveAllDeployedBtn').disabled = false;
+            // Start with 1 blank entry
+            addDeployedEntry();
+            document.getElementById('addDeployedModal').classList.add('active');
+        }
+
+        function closeAddDeployed() {
+            document.getElementById('addDeployedModal').classList.remove('active');
+        }
+
+        function addDeployedEntry() {
+            adEntryCount++;
+            const n = adEntryCount;
+            const list = document.getElementById('adEntriesList');
+            const row = document.createElement('div');
+            row.className = 'ad-entry-row';
+            row.id = `adEntry-${n}`;
+            row.innerHTML = `
+                <div class="ad-entry-row-header">
+                    <div class="ad-entry-num">${n}</div>
+                    <span class="ad-entry-label">Entry ${n}</span>
+                    <button type="button" class="ad-remove-btn" onclick="removeDeployedEntry(${n})" title="Remove this entry">&times;</button>
+                </div>
+                <div class="ad-entry-fields">
+                    <div class="form-group">
+                        <label>Equipment Code</label>
+                        <input class="e-code" type="text" placeholder="e.g., MAC-0031">
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <input class="e-type" type="text" placeholder="e.g., Laptop">
+                    </div>
+                    <div class="form-group">
+                        <label>Model</label>
+                        <input class="e-model" type="text" placeholder="e.g., Dell Latitude">
+                    </div>
+                    <div class="form-group">
+                        <label>Serial Number</label>
+                        <input class="e-serial" type="text" placeholder="Optional">
+                    </div>
+                    <div class="form-group">
+                        <label>Employee Name</label>
+                        <input class="e-name" type="text" placeholder="e.g., Juan dela Cruz">
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <input class="e-dept" type="text" placeholder="e.g., Operations">
+                    </div>
+                    <div class="form-group span3">
+                        <label>Address (Unit/House Location)</label>
+                        <input class="e-address" type="text" placeholder="e.g., 123 Rizal St, Calamba, Laguna">
+                    </div>
+                    <div class="form-group span3">
+                        <label>Remarks (this entry only)</label>
+                        <input class="e-remarks" type="text" placeholder="e.g., For WFH setup">
+                    </div>
+                </div>`;
+            list.appendChild(row);
+            // Scroll to new row
+            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function removeDeployedEntry(n) {
+            const row = document.getElementById(`adEntry-${n}`);
+            if (row) row.remove();
+        }
+
+        async function saveAllDeployed() {
+            const sharedDate = document.getElementById('adSharedDate').value;
+            const sharedBatch = document.getElementById('adSharedBatch').value.trim();
+            const sharedAcc = document.getElementById('adSharedAccessories').value.trim();
+
+            const rows = document.getElementById('adEntriesList').querySelectorAll('.ad-entry-row');
+            if (rows.length === 0) { show('❌ Please add at least one entry', true); return; }
+
+            const entries = [];
+            rows.forEach(row => {
+                row.classList.remove('has-error');
+                entries.push({
+                    code:    row.querySelector('.e-code').value.trim(),
+                    type:    row.querySelector('.e-type').value.trim(),
+                    model:   row.querySelector('.e-model').value.trim(),
+                    serial:  row.querySelector('.e-serial').value.trim(),
+                    name:    row.querySelector('.e-name').value.trim(),
+                    dept:    row.querySelector('.e-dept').value.trim(),
+                    address: row.querySelector('.e-address').value.trim(),
+                    remarks: row.querySelector('.e-remarks').value.trim()
+                });
+            });
+
+            document.getElementById('saveAllDeployedBtn').disabled = true;
+            const prog = document.getElementById('adProgress');
+            const progText = document.getElementById('adProgressText');
+            const progBar = document.getElementById('adProgressBar');
+            prog.style.display = 'block';
+
+            let done = 0, errors = [];
+            for (const entry of entries) {
+                try {
+                    const record = {
+                        location: 'Deployed', status: 'Deployed',
+                        code: entry.code, type: entry.type, model: entry.model,
+                        serial_no: entry.serial, qty: 1,
+                        assigned_to: entry.name, department: entry.dept,
+                        address: entry.address,
+                        date_issued: sharedDate || null, batch: sharedBatch,
+                        accessories: sharedAcc,
+                        remarks: entry.remarks,
+                        edited_by: currentUserData.username,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    };
+                    const { data: adData, error } = await safeInsert('inventory', record);
+                    if (error) throw error;
+                } catch (err) { errors.push(`${entry.name}: ${err.message}`); dbg('FAILED [' + entry.name + ']: ' + err.message); }
+                done++;
+                progBar.style.width = Math.round((done / entries.length) * 100) + '%';
+                progText.textContent = `Saving... ${done} / ${entries.length}`;
+            }
+
+            if (errors.length === 0) {
+                progText.textContent = `All ${entries.length} entries saved to Deployed!`;
+                show(`✅ ${entries.length} item(s) added to Deployed`);
+            } else {
+                progText.textContent = `${entries.length - errors.length}/${entries.length} saved. ${errors.length} error(s).`;
+                show('⚠️ Errors: ' + errors.join(' | '), true);
+            }
+            await load();
+            setTimeout(closeAddDeployed, 1800);
+        }
+
+        /* ══════════════════════════════════════════════════════
+           BATCH DEPLOY — creates one new DB record per employee
+        ══════════════════════════════════════════════════════ */
+
+        function openBatchDeploy(id) {
+            if (!currentUserData.canEdit) { show('❌ View only mode - No edit permissions', true); return; }
+            batchSourceItem = inv.find(i => i.id === id);
+            if (!batchSourceItem) return;
+
+            document.getElementById('batchEquipInfo').innerHTML = `
+                <div><strong>Equipment Type:</strong> ${batchSourceItem.type || '-'}</div>
+                <div><strong>Model:</strong> ${batchSourceItem.model || '-'}</div>
+                <div><strong>Base Code:</strong> ${batchSourceItem.code || '-'}</div>
+                <div><strong>Current Location:</strong> ${batchSourceItem.location || '-'}</div>`;
+
+            // Reset shared fields
+            document.getElementById('batchDateIssued').valueAsDate = new Date();
+            document.getElementById('batchName').value = '';
+            document.getElementById('batchAccessories').value = '';
+            document.getElementById('batchGeneralNotes').value = '';
+            document.getElementById('batchUnitCount').value = 2;
+            document.getElementById('batchProgress').style.display = 'none';
+            document.getElementById('confirmBatchBtn').disabled = false;
+
+            rebuildBatchRows();
+            document.getElementById('batchModal').classList.add('active');
+        }
+
+        function rebuildBatchRows() {
+            const count = Math.max(1, Math.min(50, parseInt(document.getElementById('batchUnitCount').value) || 1));
+            document.getElementById('batchUnitCount').value = count;
+            const list = document.getElementById('batchUnitsList');
+
+            // Save existing values so typing isn't lost on update
+            const prev = [];
+            list.querySelectorAll('.batch-unit-row').forEach(row => {
+                prev.push({
+                    name:    row.querySelector('.u-name').value,
+                    dept:    row.querySelector('.u-dept').value,
+                    serial:  row.querySelector('.u-serial').value,
+                    code:    row.querySelector('.u-code').value,
+                    address: row.querySelector('.u-address').value,
+                    remarks: row.querySelector('.u-remarks').value,
+                });
+            });
+
+            list.innerHTML = '';
+            for (let n = 1; n <= count; n++) {
+                const p = prev[n - 1] || {};
+                const row = document.createElement('div');
+                row.className = 'batch-unit-row';
+                row.innerHTML = `
+                    <div class="batch-unit-row-header">
+                        <div class="unit-badge">${n}</div>
+                        <span class="unit-label">Unit ${n}</span>
+                    </div>
+                    <div class="batch-unit-fields">
+                        <div class="form-group">
+                            <label>Employee Name *</label>
+                            <input class="u-name" type="text" placeholder="e.g., Juan dela Cruz" value="${p.name || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Department *</label>
+                            <input class="u-dept" type="text" placeholder="e.g., Operations" value="${p.dept || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Equipment Code</label>
+                            <input class="u-code" type="text" placeholder="e.g., MAC-0031" value="${p.code || (batchSourceItem?.code || '')}">
+                        </div>
+                        <div class="form-group">
+                            <label>Serial Number</label>
+                            <input class="u-serial" type="text" placeholder="e.g., SN-00${n}" value="${p.serial || ''}">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Address (Unit/House Location)</label>
+                            <input class="u-address" type="text" placeholder="e.g., 123 Rizal St, Calamba, Laguna" value="${p.address || ''}">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Unit-Specific Notes</label>
+                            <input class="u-remarks" type="text" placeholder="Optional notes for this unit only" value="${p.remarks || ''}">
+                        </div>
+                    </div>`;
+                list.appendChild(row);
+            }
+        }
+
+        async function submitBatchDeploy() {
+            if (!batchSourceItem || !currentUserData.canEdit) return;
+
+            const sharedDate   = document.getElementById('batchDateIssued').value;
+            const sharedBatch  = document.getElementById('batchName').value.trim();
+            const sharedAcc    = document.getElementById('batchAccessories').value.trim();
+            const sharedNotes  = document.getElementById('batchGeneralNotes').value.trim();
+
+            if (!sharedDate) { show('❌ Please enter a Date Issued', true); return; }
+
+            // Collect rows
+            const rows = document.getElementById('batchUnitsList').querySelectorAll('.batch-unit-row');
+            const units = [];
+            rows.forEach(row => {
+                row.classList.remove('error');
+                units.push({
+                    name:    row.querySelector('.u-name').value.trim(),
+                    dept:    row.querySelector('.u-dept').value.trim(),
+                    code:    row.querySelector('.u-code').value.trim()   || batchSourceItem.code || '',
+                    serial:  row.querySelector('.u-serial').value.trim() || '',
+                    address: row.querySelector('.u-address').value.trim(),
+                    remarks: row.querySelector('.u-remarks').value.trim()
+                });
+            });
+
+            // Lock UI & show progress
+            document.getElementById('confirmBatchBtn').disabled = true;
+            const progressEl   = document.getElementById('batchProgress');
+            const progressText = document.getElementById('batchProgressText');
+            const progressBar  = document.getElementById('batchProgressBar');
+            progressEl.style.display = 'block';
+
+            let done = 0, errors = [];
+            for (const unit of units) {
+                try {
+                    const record = {
+                        location:    'Deployed',
+                        status:      'Deployed',
+                        code:         unit.code,
+                        type:         batchSourceItem.type  || '',
+                        model:        batchSourceItem.model || '',
+                        serial_no:    unit.serial,
+                        qty:          1,
+                        assigned_to:  unit.name,
+                        department:   unit.dept,
+                        address:      unit.address,
+                        date_issued:  sharedDate || null,
+                        batch:        sharedBatch,
+                        accessories:  sharedAcc,
+                        remarks:      unit.remarks || sharedNotes || '',
+                        edited_by:    currentUserData.username,
+                        created_at:   new Date().toISOString(),
+                        updated_at:   new Date().toISOString()
+                    };
+                    const { data: bdData, error } = await safeInsert('inventory', record);
+                    if (error) throw error;
+                } catch (err) {
+                    errors.push(`${unit.name}: ${err.message}`);
+                    dbg('BATCH FAILED [' + unit.name + ']: ' + err.message);
+                }
+                done++;
+                const pct = Math.round((done / units.length) * 100);
+                progressText.textContent = `Deploying... ${done} / ${units.length} units`;
+                progressBar.style.width = pct + '%';
+            }
+
+            if (errors.length === 0) {
+                progressText.textContent = `All ${units.length} units deployed successfully!`;
+                show(`✅ Batch deploy done — ${units.length} units deployed`);
+            } else {
+                progressText.textContent = `${units.length - errors.length} / ${units.length} deployed. ${errors.length} error(s).`;
+                console.error('Batch errors:', errors);
+                show(`⚠️ Some units had errors. Check console.`, true);
+            }
+
+            await load();
+            setTimeout(closeBatch, 2000);
+        }
+
+        function closeBatch() {
+            document.getElementById('batchModal').classList.remove('active');
+            document.getElementById('batchProgress').style.display = 'none';
+            document.getElementById('confirmBatchBtn').disabled = false;
+            batchSourceItem = null;
+        }
+
+        /* ═══════════════════════════════ */
+
+        function openReturn(id) {
+            if (!currentUserData.canEdit) { show('❌ View only mode - No edit permissions', true); return; }
+            currentItem = inv.find(i => i.id === id);
+            if (!currentItem) return;
+            document.getElementById('returnInfo').innerHTML = `
+                <div><strong>Equipment:</strong> ${currentItem.code} - ${currentItem.type}</div>
+                <div><strong>Model:</strong> ${currentItem.model}</div>
+                <div><strong>Currently Assigned To:</strong> ${currentItem.assigned_to}</div>
+                <div><strong>Department:</strong> ${currentItem.department}</div>
+                ${currentItem.address ? `<div><strong>Address:</strong> ${currentItem.address}</div>` : ''}
+                <div><strong>Date Issued:</strong> ${currentItem.date_issued}</div>`;
+            document.getElementById('returnModal').classList.add('active');
+        }
+
+        function closeReturn() {
+            document.getElementById('returnModal').classList.remove('active');
+            document.getElementById('returnForm').reset();
+            currentItem = null;
+        }
+
+        async function returnEquipment(e) {
+            e.preventDefault();
+            if (!currentItem || !currentUserData.canEdit) return;
+            const returnLoc = document.getElementById('returnLocation').value;
+            const update = {
+                location: returnLoc, status: returnLoc === 'Defective' ? 'Defective' : 'Available',
+                assigned_to: '', department: '', date_issued: null, batch: '', accessories: '',
+                remarks: document.getElementById('returnRemarks').value || 'Returned from ' + currentItem.assigned_to,
+                edited_by: currentUserData.username,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+            try {
+                const { error } = await sb.from('inventory').update(update).eq('id', currentItem.id);
+                if (error) throw error;
+                await logHistory(currentItem.id, 'returned', {
+                    from_employee: currentItem.assigned_to, from_department: currentItem.department,
+                    returned_to: returnLoc, notes: update.remarks
+                });
+                show('✅ Equipment returned to ' + returnLoc);
+                await load(); closeReturn();
+            } catch (e) { show('❌ Error: ' + e.message, true); }
+        }
+
+        function openReassign(id) {
+            if (!currentUserData.canEdit) { show('❌ View only mode - No edit permissions', true); return; }
+            currentItem = inv.find(i => i.id === id);
+            if (!currentItem) return;
+            document.getElementById('reassignInfo').innerHTML = `
+                <div><strong>Equipment:</strong> ${currentItem.code} - ${currentItem.type}</div>
+                <div><strong>Model:</strong> ${currentItem.model}</div>
+                <div><strong>Currently Assigned To:</strong> ${currentItem.assigned_to}</div>
+                <div><strong>Department:</strong> ${currentItem.department}</div>
+                ${currentItem.address ? `<div><strong>Current Address:</strong> ${currentItem.address}</div>` : ''}`;
+            document.getElementById('newDateIssued').valueAsDate = new Date();
+            document.getElementById('newAddress').value = currentItem.address || '';
+            document.getElementById('reassignModal').classList.add('active');
+        }
+
+        function closeReassign() {
+            document.getElementById('reassignModal').classList.remove('active');
+            document.getElementById('reassignForm').reset();
+            currentItem = null;
+        }
+
+        async function reassignEquipment(e) {
+            e.preventDefault();
+            if (!currentItem || !currentUserData.canEdit) return;
+            const update = {
+                assigned_to: document.getElementById('newEmployee').value,
+                department:  document.getElementById('newDepartment').value,
+                address:     document.getElementById('newAddress').value,
+                date_issued: document.getElementById('newDateIssued').value || null,
+                remarks:     document.getElementById('reassignReason').value || `Reassigned from ${currentItem.assigned_to}`,
+                edited_by:   currentUserData.username,
+                created_at:   new Date().toISOString(),
+                updated_at:   new Date().toISOString()
+            };
+            try {
+                const { error } = await sb.from('inventory').update(update).eq('id', currentItem.id);
+                if (error) throw error;
+                await logHistory(currentItem.id, 'reassigned', {
+                    from_employee: currentItem.assigned_to, from_department: currentItem.department,
+                    assigned_to: update.assigned_to, department: update.department,
+                    address: update.address, date_issued: update.date_issued, notes: update.remarks
+                });
+                show('✅ Equipment reassigned to ' + update.assigned_to);
+                await load(); closeReassign();
+            } catch (e) { show('❌ Error: ' + e.message, true); }
+        }
+
+        function edit(id) { openModal(id); }
+
+        async function del(id) {
+            if (!currentUserData.canEdit) { show('❌ View only mode - No edit permissions', true); return; }
+            if (!(await ask('Delete this equipment?', 'This permanently removes the record and cannot be undone.', 'Delete'))) return;
+            try {
+                const { error } = await sb.from('inventory').delete().eq('id', id);
+                if (error) throw error;
+                show('✅ Equipment deleted');
+                await load();
+            } catch (e) { show('❌ Error: ' + e.message, true); }
+        }
+
+        /* ══════════════════════════════════════════════════════
+           EQUIPMENT HISTORY
+        ══════════════════════════════════════════════════════ */
+
+        async function logHistory(inventoryId, actionType, details) {
+            try {
+                const record = {
+                    inventory_id: inventoryId,
+                    action_type: actionType,
+                    details: JSON.stringify(details),
+                    performed_by: currentUserData.username,
+                    performed_at: new Date().toISOString()
+                };
+                await sb.from('equipment_history').insert([record]);
+            } catch (e) {
+                console.warn('History log failed (table may not exist yet):', e.message);
+            }
+        }
+
+        async function openHistory(id) {
+            const item = inv.find(i => i.id === id);
+            if (!item) return;
+            document.getElementById('historyEquipInfo').innerHTML = `
+                <div><strong>Equipment:</strong> ${item.code} — ${item.type}</div>
+                <div><strong>Model:</strong> ${item.model}${item.serial_no ? ' &nbsp;|&nbsp; <strong>Serial:</strong> ' + item.serial_no : ''}</div>
+                <div><strong>Current Status:</strong> <span class="status-badge ${(item.status||'available').toLowerCase()}">${item.status||'Available'}</span> &nbsp; <strong>Location:</strong> ${item.location||'-'}</div>`;
+            document.getElementById('historyTimeline').innerHTML = '<div class="history-empty">⏳ Loading history…</div>';
+            document.getElementById('historyModal').classList.add('active');
+
+            try {
+                const { data, error } = await sb.from('equipment_history')
+                    .select('*').eq('inventory_id', id).order('performed_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    document.getElementById('historyTimeline').innerHTML =
+                        '<div class="history-empty">No history recorded yet.<br><small style="color:#cbd5e0;">History is logged automatically when you assign, return, or reassign this equipment.</small></div>';
+                    return;
+                }
+
+                const iconMap = { assigned: { icon: ic('arrow'), cls: 'assigned' }, returned: { icon: ic('undo'), cls: 'returned' }, reassigned: { icon: ic('swap'), cls: 'reassigned' }, created: { icon: ic('plus'), cls: 'created' }, edited: { icon: ic('edit'), cls: 'edited' } };
+
+                document.getElementById('historyTimeline').innerHTML = data.map(ev => {
+                    const d = (() => { try { return JSON.parse(ev.details || '{}'); } catch { return {}; } })();
+                    const m = iconMap[ev.action_type] || { icon: ic('info'), cls: 'edited' };
+                    const dt = ev.performed_at ? new Date(ev.performed_at).toLocaleString('en-PH', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '-';
+
+                    let detailHtml = '';
+                    if (ev.action_type === 'assigned') {
+                        detailHtml = `<span><strong>To:</strong> ${d.assigned_to||'-'}</span><span><strong>Dept:</strong> ${d.department||'-'}</span>${d.date_issued ? `<span><strong>Date:</strong> ${d.date_issued}</span>` : ''}${d.address ? `<br><span>${d.address}</span>` : ''}${d.batch ? `<span>Batch: ${d.batch}</span>` : ''}${d.notes ? `<br><span>${d.notes}</span>` : ''}`;
+                    } else if (ev.action_type === 'returned') {
+                        detailHtml = `<span><strong>From:</strong> ${d.from_employee||'-'}</span>${d.from_department ? `<span>${d.from_department}</span>` : ''}<span><strong>Returned to:</strong> ${d.returned_to||'-'}</span>${d.notes ? `<br><span>${d.notes}</span>` : ''}`;
+                    } else if (ev.action_type === 'reassigned') {
+                        detailHtml = `<span><strong>From:</strong> ${d.from_employee||'-'}</span><span></span><span><strong>To:</strong> ${d.assigned_to||'-'}</span>${d.department ? `<span>${d.department}</span>` : ''}${d.date_issued ? `<span>${d.date_issued}</span>` : ''}${d.address ? `<br><span>${d.address}</span>` : ''}${d.notes ? `<br><span>${d.notes}</span>` : ''}`;
+                    } else {
+                        detailHtml = d.notes ? `<span>${d.notes}</span>` : '';
+                    }
+
+                    const actionLabels = { assigned: 'Assigned', returned: 'Returned', reassigned: 'Reassigned', created: 'Created', edited: 'Edited' };
+
+                    return `<div class="history-event">
+                        <div class="history-icon ${m.cls}">${m.icon}</div>
+                        <div class="history-body">
+                            <div class="history-body-header">
+                                <span class="history-action">${actionLabels[ev.action_type] || ev.action_type}</span>
+                                <span class="history-date">${dt}</span>
+                            </div>
+                            <div class="history-detail">${detailHtml}</div>
+                            <div class="history-by">By: ${ev.performed_by||'-'}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (e) {
+                document.getElementById('historyTimeline').innerHTML =
+                    `<div class="history-empty">Could not load history.<br><small style="color:#e74c3c;">${e.message}</small><br><br><small style="color:#a0aec0;">You need to create the <strong>equipment_history</strong> table in Supabase. See instructions below.</small>
+                    <div style="background:#1a202c;color:#68d391;font-family:monospace;font-size:11px;padding:14px;border-radius:8px;margin-top:12px;text-align:left;">
+CREATE TABLE equipment_history (<br>
+&nbsp;&nbsp;id BIGSERIAL PRIMARY KEY,<br>
+&nbsp;&nbsp;inventory_id BIGINT REFERENCES inventory(id) ON DELETE CASCADE,<br>
+&nbsp;&nbsp;action_type TEXT,<br>
+&nbsp;&nbsp;details JSONB,<br>
+&nbsp;&nbsp;performed_by TEXT,<br>
+&nbsp;&nbsp;performed_at TIMESTAMPTZ DEFAULT NOW()<br>
+);</div></div>`;
+            }
+        }
+
+        function closeHistory() {
+            document.getElementById('historyModal').classList.remove('active');
+        }
+
+        function busy(e) { const b = e && e.submitter; if (b) b.classList.add('loading'); return () => b && b.classList.remove('loading'); }
+        ['saveItem', 'assignEquipment', 'returnEquipment', 'reassignEquipment'].forEach(n => {
+            const f = window[n];
+            window[n] = async function (e) { const done = busy(e); try { await f(e); } finally { done(); } };
+        });
+        syncThemeIcon();
+    </script>
+</body>
+</html>
