@@ -139,14 +139,49 @@ tbody tr:last-child td{border-bottom:0}tbody tr{transition:background .12s}tbody
 @keyframes tin{from{opacity:0;transform:translateY(8px)}}
 #debugBox{display:none;position:fixed;left:20px;bottom:20px;max-width:460px;background:#14121F;color:#8FE0B5;font:12px/1.5 ui-monospace,monospace;padding:12px 14px;border-radius:10px;z-index:3000;white-space:pre-wrap;max-height:200px;overflow:auto}
 /* login */
-.login-wrap{display:grid;grid-template-columns:1.1fr 1fr;min-height:100vh}
-.login-art{background:var(--side);color:#fff;padding:56px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
-.login-art::after{content:'';position:absolute;right:-120px;bottom:-120px;width:380px;height:380px;border-radius:50%;border:56px solid var(--pink);opacity:.9;clip-path:inset(0 50% 50% 0)}
-.login-art h2{font-size:34px;line-height:1.15;letter-spacing:-.03em;font-weight:650;max-width:15ch}.login-art p{color:#9C9AB8;margin-top:12px;max-width:34ch}
-.login-art img{width:56px;height:56px;border-radius:50%;background:#fff;object-fit:contain}
-.login-form{display:grid;place-items:center;padding:32px;background:var(--surface)}.login-form form{width:100%;max-width:360px}
-.login-form h1{font-size:24px;letter-spacing:-.02em;margin-bottom:4px}.login-form .lead{color:var(--ink2);margin-bottom:24px}
-.login-form .btn{width:100%;padding:11px}
+#loginScreen{--l-bg:#0A0F1C;--l-panel:#131A2E;--l-field:#0B1121;--l-line:#2A3552;--l-ink:#F3F5FB;--l-muted:#9AA5C2;--l-amber:#F3A43F;--l-pink:#E53A6F;background:var(--l-bg);color:var(--l-ink)}
+.login-wrap{min-height:100vh;min-height:100dvh;padding:16px;display:grid}
+.login-card{width:100%;max-width:1680px;margin:0 auto;display:grid;grid-template-columns:minmax(380px,42fr) 58fr;border-radius:28px;overflow:hidden;background:var(--l-panel);border:1px solid rgba(255,255,255,.06);box-shadow:0 30px 80px -30px rgba(0,0,0,.7);animation:loginIn .6s cubic-bezier(.2,.7,.2,1) both}
+@keyframes loginIn{from{opacity:0;transform:translateY(12px) scale(.992)}to{opacity:1;transform:none}}
+.login-panel{display:grid;place-items:center;padding:40px clamp(24px,4vw,64px);background:radial-gradient(120% 70% at 0% 0%,rgba(91,87,132,.28),transparent 60%),var(--l-panel)}
+.login-inner{width:100%;max-width:380px}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:clamp(28px,6vh,56px)}
+.login-brand img{width:44px;height:44px;object-fit:contain;flex-shrink:0}
+.login-brand b{display:block;font-size:17px;letter-spacing:-.01em;line-height:1.15}
+.login-brand span{display:block;font-size:12.5px;color:var(--l-pink);letter-spacing:.01em}
+.login-inner h1{font-size:clamp(30px,3.2vw,38px);line-height:1.1;letter-spacing:-.035em;font-weight:700}
+.login-inner .lead{color:var(--l-muted);font-size:15px;margin:10px 0 28px;max-width:34ch}
+.l-field{margin-bottom:16px}
+.l-field label{display:block;margin-bottom:7px;font-size:13px;font-weight:600;color:#C9D1E8}
+.l-control{position:relative}
+.l-control input{width:100%;height:52px;padding:0 52px 0 16px;border-radius:14px;border:1px solid var(--l-line);background:var(--l-field);color:var(--l-ink);font-size:15.5px;outline:2px solid transparent;transition:border-color .18s,box-shadow .18s,background .18s}
+.l-control input::placeholder{color:#5F6B8E}
+.l-control input:hover{border-color:#3A4870}
+.l-control input:focus{border-color:var(--l-amber);box-shadow:0 0 0 4px rgba(243,164,63,.18)}
+.l-control input[aria-invalid=true]{border-color:var(--l-pink)}
+.l-control input:-webkit-autofill{-webkit-text-fill-color:var(--l-ink);box-shadow:0 0 0 40px var(--l-field) inset}
+.l-ic{position:absolute;right:16px;top:50%;width:20px;height:20px;margin-top:-10px;color:#6F7CA3;pointer-events:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.l-toggle{position:absolute;right:6px;top:6px;width:40px;height:40px;border:0;border-radius:10px;background:none;color:#8C98BA;display:grid;place-items:center;cursor:pointer;transition:background .15s,color .15s}
+.l-toggle:hover{background:rgba(255,255,255,.07);color:#fff}
+.l-toggle:focus-visible{outline:2px solid var(--l-amber);outline-offset:0}
+.l-toggle .l-ic{position:static;margin:0;width:20px;height:20px}
+.l-toggle .off{display:none}.l-toggle[aria-pressed=true] .on{display:none}.l-toggle[aria-pressed=true] .off{display:block}
+.login-inner .error-message{margin:16px 0 0;padding:12px 14px;border-radius:12px;background:rgba(229,58,111,.12);border:1px solid rgba(229,58,111,.4);color:#FFC4BC;font-size:13.5px}
+.login-submit{width:100%;height:52px;margin-top:20px;border:0;border-radius:14px;background:var(--l-amber);color:#1B1304;font-size:15.5px;font-weight:700;letter-spacing:.005em;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:background .18s,transform .15s,box-shadow .18s}
+.login-submit:hover:not(:disabled){background:#F7B255;transform:translateY(-1px);box-shadow:0 12px 26px -12px rgba(243,164,63,.7)}
+.login-submit:active:not(:disabled){transform:none}
+.login-submit:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.login-submit:disabled{cursor:progress;opacity:.75}
+.login-submit .spin{display:none;width:18px;height:18px;border:2.5px solid rgba(27,19,4,.3);border-top-color:#1B1304;border-radius:50%;animation:lspin .7s linear infinite}
+.login-submit.is-loading .spin{display:block}
+@keyframes lspin{to{transform:rotate(360deg)}}
+.login-foot{margin-top:32px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08);font-size:13px;color:var(--l-muted);line-height:1.6}
+.login-foot small{display:block;font-size:12px;color:#6F7CA3}
+.login-art{position:relative;overflow:hidden;border-radius:200px 0 0 200px;background:#1B2A4A;min-height:360px}
+.login-art svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.login-art .ct{font:700 15px var(--font);fill:#F3F5FB}.login-art .cs{font:500 12px var(--font);fill:#A9B8DC}
+.login-art .chip{animation:chipFloat 7s ease-in-out infinite}.login-art .chip.c2{animation-delay:-3.5s}
+@keyframes chipFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 /* responsive */
 @media(max-width:1100px){.stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:860px){
@@ -162,7 +197,13 @@ td{border:0;padding:8px 0;display:flex;justify-content:space-between;gap:12px;al
 tbody tr:hover{background:var(--surface)}
 .modal{align-items:flex-end;padding:0}.modal-content{border-radius:16px 16px 0 0;max-height:94vh;transform:translateY(24px)}
 .form-grid,.batch-shared-grid,.batch-unit-fields,.ad-entry-fields{grid-template-columns:1fr}.form-actions{flex-direction:column-reverse}.form-actions .btn{width:100%}
-.login-wrap{grid-template-columns:1fr}.login-art{display:none}#toasts{left:16px;right:16px;bottom:12px}.toast{max-width:none}}
+.login-wrap{padding:0}.login-card{grid-template-columns:1fr;grid-template-rows:auto 1fr;border-radius:0;border:0}
+.login-art{order:-1;min-height:0;height:clamp(160px,38vw,300px);border-radius:0 0 40px 40px}.login-art .chip{display:none}
+.login-panel{place-items:start center;padding:28px 22px 36px}.login-brand{margin-bottom:24px}.login-inner .lead{margin-bottom:22px}
+.l-control input{font-size:16px}#toasts{left:16px;right:16px;bottom:12px}.toast{max-width:none}}
+@media(min-width:861px) and (max-width:1100px){.login-card{grid-template-columns:minmax(360px,46fr) 54fr}.login-art{border-radius:120px 0 0 120px}}
+@media(max-height:760px) and (min-width:861px){.login-panel{padding-top:24px;padding-bottom:24px}.login-brand{margin-bottom:28px}.login-inner .lead{margin-bottom:20px}.login-foot{margin-top:24px}}
+@media(min-width:600px) and (max-width:860px){.login-panel{place-items:center}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -173,18 +214,72 @@ tbody tr:hover{background:var(--surface)}
 <div class="menu" id="menu" role="menu"></div>
 
 <div id="loginScreen">
-  <div class="login-wrap">
-    <div class="login-art"><img src="CnrLogo.png" alt="Create &amp; Reach logo"><div><h2>Know where every device is, and who has it.</h2><p>Create &amp; Reach equipment inventory</p></div></div>
-    <div class="login-form">
-      <form id="loginForm">
-        <h1>Sign in</h1><p class="lead">Use your HR account to manage equipment.</p>
-        <div class="form-group"><label for="username">Username</label><input type="text" id="username" required placeholder="Your username" autocomplete="username"></div>
-        <div class="form-group"><label for="password">Password</label><input type="password" id="password" required placeholder="Your password" autocomplete="current-password"></div>
-        <button type="submit" class="btn btn-primary">Sign in</button>
-        <div id="loginError" class="error-message"></div>
-      </form>
+  <main class="login-wrap">
+    <div class="login-card">
+      <section class="login-panel" aria-labelledby="loginTitle">
+        <div class="login-inner">
+          <div class="login-brand"><img src="CnrMark.png" alt="" width="44" height="44"><div><b>Create &amp; Reach</b><span>Virtual Assistant Services</span></div></div>
+          <h1 id="loginTitle">Welcome back</h1>
+          <p class="lead">Sign in to see where every device is and who has it.</p>
+          <form id="loginForm">
+            <div class="l-field"><label for="username">Username</label><div class="l-control"><input type="text" id="username" required placeholder="Your username" autocomplete="username" autocapitalize="none" spellcheck="false"><svg class="l-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4 3.4-6.2 7.5-6.2s7.5 2.2 7.5 6.2"/></svg></div></div>
+            <div class="l-field"><label for="password">Password</label><div class="l-control"><input type="password" id="password" required placeholder="Your password" autocomplete="current-password"><button type="button" class="l-toggle" id="pwToggle" aria-label="Show password" aria-pressed="false" aria-controls="password"><svg class="l-ic on" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="l-ic off" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 5.6A10 10 0 0 1 12 5.5c6.4 0 10 6.5 10 6.5a17 17 0 0 1-3.2 4M6.5 6.9C3.7 8.7 2 12 2 12s3.6 6.5 10 6.5c1.6 0 3-.4 4.2-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></button></div></div>
+            <div id="loginError" class="error-message" role="alert"></div>
+            <button type="submit" class="login-submit"><span class="spin" aria-hidden="true"></span><span class="label">Sign in</span></button>
+          </form>
+          <div class="login-foot">Need access? Ask your HR administrator.<small>&copy; 2026 Create &amp; Reach Virtual Assistant Services</small></div>
+        </div>
+      </section>
+      <aside class="login-art" aria-hidden="true">
+<svg viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="lgSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16213D"/><stop offset="1" stop-color="#2A5683"/></linearGradient>
+<linearGradient id="lgLid" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#DADEE6"/><stop offset="1" stop-color="#A9B0BF"/></linearGradient>
+<linearGradient id="lgBeam" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".26"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+</defs>
+<rect width="800" height="800" fill="#101830"/>
+<rect x="296" width="504" height="660" fill="url(#lgSky)"/>
+<circle cx="372" cy="128" r="70" fill="#F6E7C1" opacity=".12"/><circle cx="372" cy="128" r="36" fill="#F6E7C1"/>
+<g fill="#fff" opacity=".7"><circle cx="330" cy="60" r="2"/><circle cx="450" cy="90" r="1.6"/><circle cx="520" cy="40" r="2.2"/><circle cx="560" cy="170" r="1.5"/><circle cx="700" cy="70" r="2"/><circle cx="740" cy="190" r="1.6"/><circle cx="320" cy="230" r="1.6"/><circle cx="690" cy="300" r="1.8"/></g>
+<polygon points="660,0 800,0 800,300" fill="url(#lgBeam)"/>
+<rect x="250" width="46" height="660" fill="#7B4A3B"/><rect x="610" width="40" height="660" fill="#8A5240"/>
+<ellipse cx="190" cy="720" rx="170" ry="120" fill="#F3A43F" opacity=".07"/>
+<rect x="345" y="440" width="300" height="230" rx="60" fill="#A94E35"/>
+<path d="M360 660V520Q360 462 420 452H520Q580 462 580 520V660Z" fill="#F5F7FC"/>
+<path d="M2 0" fill="none"/>
+<path d="M372 360Q372 282 470 276Q568 282 568 360V440Q568 462 548 462H392Q372 462 372 440Z" fill="#2A2438"/>
+<rect x="450" y="425" width="40" height="44" rx="14" fill="#EFC3A6"/>
+<path d="M436 452L470 492L504 452Z" fill="#EFC3A6"/>
+<path d="M436 452L470 492M504 452L470 492" stroke="#D5DCEC" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M440 462L462 518M500 462L478 518" stroke="#4D6FD1" stroke-width="5" stroke-linecap="round"/>
+<rect x="450" y="516" width="40" height="62" rx="7" fill="#fff" stroke="#D5DCEC"/><circle cx="470" cy="536" r="8" fill="#F3A43F"/><rect x="458" y="552" width="24" height="4" rx="2" fill="#C5CDE0"/><rect x="458" y="561" width="16" height="4" rx="2" fill="#C5CDE0"/>
+<path d="M362 505Q338 560 360 598L408 602Q398 556 418 512Z" fill="#E7EBF5"/><path d="M578 505Q602 560 580 598L532 602Q542 556 522 512Z" fill="#E7EBF5"/>
+<ellipse cx="384" cy="604" rx="24" ry="13" fill="#F8D5BD"/><ellipse cx="556" cy="604" rx="24" ry="13" fill="#F8D5BD"/>
+<ellipse cx="470" cy="372" rx="80" ry="86" fill="#F8D5BD"/>
+<path d="M390 372Q384 292 470 288Q556 292 550 372Q540 330 500 322Q470 340 440 322Q400 330 390 372Z" fill="#2A2438"/>
+<path d="M390 372Q386 420 400 446H416Q404 410 408 372Z M550 372Q554 420 540 446H524Q536 410 532 372Z" fill="#2A2438"/>
+<ellipse cx="436" cy="386" rx="9" ry="12" fill="#2A2438"/><ellipse cx="504" cy="386" rx="9" ry="12" fill="#2A2438"/><circle cx="439" cy="381" r="3.5" fill="#fff"/><circle cx="507" cy="381" r="3.5" fill="#fff"/>
+<path d="M424 364Q436 358 448 364M492 364Q504 358 516 364" stroke="#2A2438" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+<path d="M468 398Q474 404 467 406" stroke="#E0A98E" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M454 414Q470 428 486 414" stroke="#B8574A" stroke-width="4" stroke-linecap="round" fill="none"/>
+<ellipse cx="418" cy="408" rx="11" ry="7" fill="#F08A8A" opacity=".35"/><ellipse cx="522" cy="408" rx="11" ry="7" fill="#F08A8A" opacity=".35"/>
+<path d="M384 356Q384 268 470 262Q556 268 556 356" stroke="#F3A43F" stroke-width="9" fill="none" stroke-linecap="round"/>
+<rect x="370" y="352" width="26" height="58" rx="13" fill="#F3A43F"/><rect x="544" y="352" width="26" height="58" rx="13" fill="#F3A43F"/>
+<path d="M552 404Q552 440 508 444" stroke="#F3A43F" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="500" cy="444" rx="12" ry="8" fill="#E53A6F"/>
+<rect y="640" width="800" height="160" fill="#3A2217"/><rect y="640" width="800" height="8" fill="#5E3A28"/>
+<ellipse cx="470" cy="734" rx="160" ry="12" fill="#000" opacity=".25"/>
+<rect x="340" y="592" width="260" height="140" rx="12" fill="url(#lgLid)"/><circle cx="470" cy="662" r="13" fill="#F4F6FA" opacity=".9"/><rect x="326" y="728" width="288" height="10" rx="5" fill="#9AA1B1"/>
+<rect x="142" y="688" width="112" height="18" rx="6" fill="#C7653F"/><path d="M150 706H246L234 772Q198 780 162 772Z" fill="#A8502F"/>
+<path d="M198 690Q150 620 168 560Q214 610 198 690Z" fill="#3E8E5A"/><path d="M198 690Q246 630 232 566Q184 610 198 690Z" fill="#2F7449"/><path d="M198 690Q196 610 200 540Q226 610 198 690Z" fill="#4BA56B"/><path d="M198 690Q130 660 108 610Q168 624 198 690Z" fill="#2F7449"/><path d="M198 690Q266 664 290 618Q226 626 198 690Z" fill="#3E8E5A"/>
+<ellipse cx="690" cy="742" rx="52" ry="12" fill="#E9D9B0"/><rect x="662" y="690" width="56" height="52" rx="10" fill="#F3E6C4"/><path d="M718 704Q744 706 740 724Q736 738 716 734" stroke="#F3E6C4" stroke-width="7" fill="none"/><ellipse cx="690" cy="692" rx="26" ry="7" fill="#6B3F26"/>
+<path d="M680 670Q672 656 682 644M700 672Q692 656 704 642" stroke="#fff" stroke-opacity=".35" stroke-width="4" stroke-linecap="round" fill="none"/>
+<g transform="translate(52 150)"><g class="chip"><rect width="214" height="58" rx="16" fill="#fff" fill-opacity=".09" stroke="#fff" stroke-opacity=".18"/><circle cx="30" cy="29" r="14" fill="#F3A43F"/><path d="M23 29l5 5 9-10" stroke="#1B1304" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="54" y="26" class="ct">Laptop</text><text x="54" y="44" class="cs">Assigned to Marketing</text></g></g>
+<g transform="translate(552 250)"><g class="chip c2"><rect width="206" height="58" rx="16" fill="#fff" fill-opacity=".09" stroke="#fff" stroke-opacity=".18"/><circle cx="30" cy="29" r="14" fill="#E53A6F"/><path d="M23 29l5 5 9-10" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="54" y="26" class="ct">Headset</text><text x="54" y="44" class="cs">Returned, in stock</text></g></g>
+</svg>
+
+      </aside>
     </div>
-  </div>
+  </main>
 </div>
 
 <div id="mainApp" style="display:none;">
@@ -622,6 +717,16 @@ tbody tr:hover{background:var(--surface)}
         let activeStat = null;
         let batchSourceItem = null;
 
+        // Login UI helper: locks the form while a sign-in attempt is running.
+        function setLoginBusy(busy) {
+            const btn = document.querySelector('#loginForm .login-submit');
+            if (busy && btn.disabled) return false;
+            btn.disabled = busy;
+            btn.classList.toggle('is-loading', busy);
+            btn.querySelector('.label').textContent = busy ? 'Signing in…' : 'Sign in';
+            return true;
+        }
+
         window.addEventListener('load', function () {
             const saved = sessionStorage.getItem('cnr_user');
             if (saved) {
@@ -634,16 +739,39 @@ tbody tr:hover{background:var(--surface)}
                 const u = document.getElementById('username').value.trim();
                 const p = document.getElementById('password').value;
                 const errDiv = document.getElementById('loginError');
+                if (!setLoginBusy(true)) return;
                 if (USERS[u] && USERS[u].password === p) {
                     currentUserData = { username: u, role: USERS[u].role, canEdit: USERS[u].canEdit };
                     sessionStorage.setItem('cnr_user', JSON.stringify(currentUserData));
                     errDiv.style.display = 'none';
                     showMainApp();
                     show('✅ Logged in as ' + USERS[u].role);
+                    setLoginBusy(false);
                 } else {
-                    errDiv.textContent = 'Incorrect username or password.';
+                    errDiv.textContent = 'Incorrect username or password. Check both and try again.';
                     errDiv.style.display = 'block';
+                    document.getElementById('username').setAttribute('aria-invalid', 'true');
+                    document.getElementById('password').setAttribute('aria-invalid', 'true');
+                    setLoginBusy(false);
+                    document.getElementById('password').select();
                 }
+            });
+
+            ['username', 'password'].forEach(function (id) {
+                document.getElementById(id).addEventListener('input', function () {
+                    document.getElementById('loginError').style.display = 'none';
+                    document.getElementById('username').removeAttribute('aria-invalid');
+                    document.getElementById('password').removeAttribute('aria-invalid');
+                });
+            });
+
+            document.getElementById('pwToggle').addEventListener('click', function () {
+                const pw = document.getElementById('password');
+                const show = pw.type === 'password';
+                pw.type = show ? 'text' : 'password';
+                this.setAttribute('aria-pressed', String(show));
+                this.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+                pw.focus();
             });
 
             setupEventListeners();
@@ -711,6 +839,9 @@ tbody tr:hover{background:var(--surface)}
             document.getElementById('mainApp').style.display = 'none';
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
+            document.getElementById('password').type = 'password';
+            document.getElementById('pwToggle').setAttribute('aria-pressed', 'false');
+            document.getElementById('pwToggle').setAttribute('aria-label', 'Show password');
         }
 
         function showMainApp() {
